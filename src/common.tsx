@@ -31,7 +31,7 @@ export const Stage:React.FC<{duration:number;dark?:boolean;children:React.ReactN
   const f=useCurrentFrame();
   return <AbsoluteFill style={{
     background:dark?INK:PAPER,color:dark?PAPER:INK,fontFamily:FONT,overflow:"hidden",
-    opacity:noFade?1:fade(f,duration)
+    opacity:1
   }}>
     {children}
     <AbsoluteFill style={{
