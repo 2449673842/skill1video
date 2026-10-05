@@ -74,7 +74,7 @@ export const Scene14:React.FC=()=>{
   const f=useCurrentFrame(),p=smooth(clamp((f-35)/110));
   return <Stage duration={frames[14]} dark noFade>
     <div style={{position:"absolute",left:960,top:540,width:30+1570*p,height:30+1570*p,borderRadius:"50%",transform:"translate(-50%,-50%)",background:"rgba(255,107,74,"+(.08+.1*p)+")",boxShadow:"0 0 "+(80+220*p)+"px "+ACCENT}}/>
-    <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",textAlign:"center"}}>
+    <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",textAlign:"center",zIndex:220}}>
       <div style={{fontSize:34,letterSpacing:4,color:"rgba(244,240,233,.48)",opacity:interpolate(f,[0,35],[0,1],{extrapolateRight:"clamp"})}}>WHAT ENTERS YOUR WORLD?</div>
       <div style={{fontSize:104,fontWeight:900,letterSpacing:-5,lineHeight:1.02,marginTop:24}}>注意力<br/><span style={{color:ACCENT}}>就是你全部需要的</span></div>
       <div style={{fontSize:30,marginTop:34,color:"rgba(244,240,233,.58)",maxWidth:950,lineHeight:1.5}}>你最终拥有的，不是经过你眼前的一切，<br/>而是那些被你持续选择、记住并投入行动的东西。</div>
