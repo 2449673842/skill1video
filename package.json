@@ -1,0 +1,16 @@
+{
+  "name": "attention-is-all-you-need-film",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "render": "remotion render src/index.tsx Attention out/attention-is-all-you-need.mp4 --codec=h264 --crf=17 --concurrency=2",
+    "still": "remotion still src/index.tsx Attention out/still.png --frame=1800"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.519",
+    "@remotion/renderer": "4.0.519",
+    "remotion": "4.0.519",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  }
+}
