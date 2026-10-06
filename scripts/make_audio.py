@@ -87,7 +87,27 @@ with wave.open(OUT, "wb") as wf:
             e = math.exp(-tick_phase*80)
             tick = 0.08*e*tone(1760, t)
 
-        sample = (pad + pulse + whoosh + tick) * duck
+        # Cinematic event accents: pre-whoosh + low metallic impact near scene boundaries.
+        hit = 0.0
+        for m in scene_marks[1:-1]:
+            dt = t - m
+            if -0.38 < dt < 0:
+                e = 1.0 - abs(dt)/0.38
+                n = math.sin((t*421.0 + m)*18.17) * math.sin((t*97.0 + m)*31.73)
+                hit += 0.07 * (e*e) * n
+            if 0 <= dt < 0.32:
+                e = math.exp(-dt*10.0)
+                hit += 0.12*e*tone(48 + (m % 4)*6, t, 0.35)
+                hit += 0.045*e*tone(710 + (m % 5)*80, t, 0.1)
+
+        # A few story-specific accents: aperture lock, memory ignition, paper open, ending bloom.
+        for m, base in [(16,62),(32,52),(64,74),(96,46),(112,58)]:
+            dt = abs(t-m)
+            if dt < 0.26:
+                e = math.exp(-dt*18)
+                hit += 0.09*e*tone(base, t) + 0.035*e*tone(base*8.0, t, 0.4)
+
+        sample = (pad + pulse + whoosh + tick + hit) * duck
 
         # Gentle stereo drift.
         pan = 0.15*math.sin(2*math.pi*t/13.0)
