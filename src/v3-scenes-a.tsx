@@ -34,21 +34,33 @@ const Ripple:React.FC<{
 );
 
 const MicroShake:React.FC<{f:number;events:number[];children:React.ReactNode;strength?:number}>=({f,events,children,strength=7})=>{
-  const hit=events.reduce((m,e)=>{
+  const peak=events.reduce((m,e)=>{
     const d=f-e;
-    if(d<0||d>11)return m;
-    return Math.max(m,1-d/11);
+    if(d<0||d>15)return m;
+    return Math.max(m,Math.exp(-d/4.8));
   },0);
-  const dx=Math.sin(f*2.8)*strength*hit;
-  const dy=Math.cos(f*2.25)*strength*.55*hit;
-  return <div style={{position:"absolute",inset:0,transform:"translate("+dx+"px,"+dy+"px)"}}>{children}</div>;
+  const ox=events.reduce((sum,e)=>{
+    const d=f-e;
+    if(d<0||d>17)return sum;
+    return sum+Math.sin((d+.25)*2.15)*Math.exp(-d/5.4);
+  },0);
+  const oy=events.reduce((sum,e)=>{
+    const d=f-e;
+    if(d<0||d>17)return sum;
+    return sum+Math.cos((d+.55)*1.78)*Math.exp(-d/5.9);
+  },0);
+  const dx=ox*strength;
+  const dy=oy*strength*.48;
+  const rot=ox*strength*.018;
+  return <div style={{position:"absolute",inset:-10,transform:"translate("+dx+"px,"+dy+"px) rotateZ("+rot+"deg) scale("+(1+peak*.0035)+")",
+    transformOrigin:"50% 54%"}}>{children}</div>;
 };
 
 const FilterPlane:React.FC<{x:number;label:string;sub:string;accent:string;active:number;index:number}>=({x,label,sub,accent,active,index})=>{
   const glow=.18+.82*active;
   return <div style={{
     position:"absolute",left:x,top:535,width:235,height:510,
-    transform:"translate(-50%,-50%) perspective(900px) rotateY("+(-12+index*7)+"deg)",
+    transform:"translate(-50%,-50%) perspective(900px) rotateY("+(-12+index*7)+"deg) translateZ("+(active*34)+"px) scale("+(1+active*.032)+")",
     border:"1px solid rgba(242,184,94,"+(.22+active*.55)+")",borderRadius:22,
     background:"linear-gradient(160deg,rgba(242,184,94,"+(.02+active*.055)+"),rgba(91,196,212,.015))",
     boxShadow:"inset 0 0 45px rgba(242,184,94,"+(.02+active*.07)+"),0 0 "+(18+active*32)+"px rgba(242,184,94,"+(.02+active*.10)+")"
@@ -91,7 +103,7 @@ export const V3Scene2:React.FC=()=>{
   return <Stage bokeh={false}>
     <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 62% 49%,rgba(40,31,18,.34),transparent 34%),radial-gradient(circle at 34% 42%,#102027 0%,#070B0E 42%,#020304 100%)"}}/>
     <Kicker>FILTERS / LAYERED PRIORITY</Kicker>
-    <MicroShake f={f} events={gateEvents} strength={5}>
+    <MicroShake f={f} events={gateEvents} strength={8}>
       <div style={{position:"absolute",left:1210,top:552,width:290,height:290,transform:"translate(-50%,-50%) scale("+(1+inherited*.24)+")",borderRadius:"50%",
         border:"12px solid rgba(242,184,94,"+(.72*inherited)+")",opacity:inherited,
         boxShadow:"0 0 70px rgba(255,122,73,.40),inset 0 0 48px rgba(255,122,73,.22)"}}/>
@@ -154,17 +166,20 @@ export const V3Scene3:React.FC=()=>{
   const ty=interpolate(f,[0,58,115,170,239],[470,650,455,620,500],{extrapolateRight:"clamp",easing:Easing.inOut(Easing.cubic)});
   const unexpectedX=interpolate(f,[38,150],[1840,360],{extrapolateLeft:"clamp",extrapolateRight:"clamp",easing:Easing.inOut(Easing.cubic)});
   const count=f<55?0:f<105?1:f<155?2:3;
-  const freeze=phase(f,150,166);
   const crowd=Array.from({length:7*12});
   const rippleEvent=[168];
-  const shake=rippleEvent.reduce((m,e)=>{const d=f-e;return d>=0&&d<12?Math.max(m,1-d/12):m;},0);
-  const dx=Math.sin(f*2.8)*6*shake,dy=Math.cos(f*2.3)*3*shake;
+  const rd=f-168;
+  const revealPeak=rd>=0&&rd<=16?Math.exp(-rd/5.2):0;
+  const revealOsc=rd>=0&&rd<=18?Math.sin((rd+.35)*2.05)*Math.exp(-rd/5.8):0;
+  const crowdX=revealOsc*10.5;
+  const crowdY=(rd>=0&&rd<=18?Math.cos((rd+.5)*1.72)*Math.exp(-rd/6.2):0)*4.4;
 
   return <Stage warm bokeh={false}>
-    <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 55% 52%,rgba(30,39,37,.42),transparent 36%),linear-gradient(180deg,#090D0F,#030405)"}}/>
+    <div style={{position:"absolute",inset:-12,background:"radial-gradient(circle at 55% 52%,rgba(30,39,37,.42),transparent 36%),linear-gradient(180deg,#090D0F,#030405)",
+      transform:"translate("+(-crowdX*.16)+"px,"+(-crowdY*.12)+"px) scale("+(1+revealPeak*.002)+")"}}/>
     <Kicker>INATTENTIONAL BLINDNESS / PARTICIPATE</Kicker>
     <GridFloor opacity={.18} horizon={400}/>
-    <div style={{position:"absolute",inset:0,transform:"translate("+dx+"px,"+dy+"px)"}}>
+    <div style={{position:"absolute",inset:0,transform:"translate("+crowdX+"px,"+crowdY+"px) scale("+(1+revealPeak*.0045)+")",transformOrigin:"40% 52%"}}>
       {crowd.map((_,i)=>{
         const r=Math.floor(i/12),cc=i%12;
         const yy=410+r*77;
@@ -177,9 +192,13 @@ export const V3Scene3:React.FC=()=>{
       })}
       <Person x={tx} y={ty} selected scale={.96}/>
       <Reticle x={tx} y={ty} r={66} opacity={1-reveal*.72}/>
-      <Person x={unexpectedX} y={555} red scale={1.28} opacity={.36+.64*reveal}/>
+    </div>
+    <div style={{position:"absolute",inset:0,transform:"translate("+(-crowdX*.48)+"px,"+(-crowdY*.38)+"px)"}}>
+      <Person x={unexpectedX} y={555} red scale={1.28+revealPeak*.18} opacity={.36+.64*reveal}/>
       <Ripple f={f} events={rippleEvent} x={360} y={555} color={RED} maxR={310} layers={4} duration={38}/>
     </div>
+    <div style={{position:"absolute",inset:0,pointerEvents:"none",opacity:revealPeak*.86,mixBlendMode:"screen",
+      background:"radial-gradient(circle at 19% 51%,rgba(255,231,219,.22) 0 2%,rgba(216,88,73,.14) 9%,transparent 24%)"}}/>
     <div style={{position:"absolute",left:92,top:100,width:760}}>
       <div style={{fontSize:50,fontWeight:900}}>只盯住<span style={{color:GOLD2}}>金色的人</span>。</div>
       <div style={{fontSize:28,color:"rgba(239,229,204,.48)",marginTop:12}}>数一数，他一共完成了几次明显移动。</div>
@@ -188,7 +207,7 @@ export const V3Scene3:React.FC=()=>{
       <div style={{fontSize:17,letterSpacing:4,color:"rgba(239,229,204,.36)"}}>MOVE COUNT</div>
       <div style={{fontSize:112,fontWeight:900,color:GOLD2,lineHeight:1,marginTop:4,fontVariantNumeric:"tabular-nums"}}>{count}</div>
     </div>
-    {reveal>.12&&<div style={{position:"absolute",left:965,top:285,width:760,opacity:reveal,transform:"translate(-50%,-50%) scale("+(1+.04*Math.sin(f*.18)) +")",textAlign:"center"}}>
+    {reveal>.12&&<div style={{position:"absolute",left:965,top:285,width:760,opacity:reveal,transform:"translate(-50%,-50%) scale("+(1+revealPeak*.055+.02*Math.sin(f*.18)) +")",textAlign:"center"}}>
       <div style={{fontSize:54,fontWeight:900,color:RED,textShadow:"0 0 25px rgba(216,88,73,.30)"}}>刚才那个红色的人，你看见了吗？</div>
       <div style={{fontSize:25,color:"rgba(239,229,204,.54)",marginTop:14}}>他一直从画面里经过，但你的任务把焦点锁在了别处。</div>
     </div>}
