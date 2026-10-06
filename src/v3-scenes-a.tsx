@@ -96,13 +96,20 @@ export const V3Scene2:React.FC=()=>{
   const y=545+Math.sin(f*.035)*58-interpolate(f,[0,239],[0,34],{extrapolateRight:"clamp"});
   const strength=.75+.25*Math.sin(f*.11);
   const inherited=1-phase(f,0,34);
-  const title=intro(f,14,28);
+  const entry=phase(f,0,34);
+  const entryPan=lerp(118,0,entry);
+  const entryScale=lerp(1.16,1,entry);
+  const entryBlur=lerp(1.4,0,entry);
+  const title=intro(f,30,24);
   const distractors=["消息","广告","疼痛","音乐","价格","气味","人脸","声音","风险","机会","通知","回忆"];
   const gateEvents=gates.map(g=>g.cross);
 
   return <Stage bokeh={false}>
     <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 62% 49%,rgba(40,31,18,.34),transparent 34%),radial-gradient(circle at 34% 42%,#102027 0%,#070B0E 42%,#020304 100%)"}}/>
     <Kicker>FILTERS / LAYERED PRIORITY</Kicker>
+    <div style={{position:"absolute",inset:-14,
+      transform:"translateX("+entryPan+"px) scale("+entryScale+")",
+      transformOrigin:"63% 51%",filter:"blur("+entryBlur+"px)"}}>
     <MicroShake f={f} events={gateEvents} strength={8}>
       <div style={{position:"absolute",left:1210,top:552,width:290,height:290,transform:"translate(-50%,-50%) scale("+(1+inherited*.24)+")",borderRadius:"50%",
         border:"12px solid rgba(242,184,94,"+(.72*inherited)+")",opacity:inherited,
@@ -133,6 +140,7 @@ export const V3Scene2:React.FC=()=>{
       </div>
       <Ripple f={f} events={gateEvents} x={e=>gates.find(g=>g.cross===e)?.x||0} y={545} color={GOLD2} maxR={175} layers={3} duration={30}/>
     </MicroShake>
+    </div>
     <div style={{position:"absolute",left:92,top:106,width:710,opacity:title,transform:"translateY("+((1-title)*22)+"px)"}}>
       <div style={{fontSize:53,fontWeight:900,lineHeight:1.12}}>信息不是被动进入。</div>
       <div style={{fontSize:53,fontWeight:900,lineHeight:1.12,color:GOLD2,marginTop:6}}>它要穿过一层层优先级。</div>
@@ -161,9 +169,14 @@ const Reticle:React.FC<{x:number;y:number;r:number;opacity?:number;accent?:strin
 
 export const V3Scene3:React.FC=()=>{
   const f=useCurrentFrame();
+  const entry=phase(f,0,32);
   const reveal=phase(f,154,184);
-  const tx=interpolate(f,[0,58,115,170,239],[520,820,1080,1350,1510],{extrapolateRight:"clamp",easing:Easing.inOut(Easing.cubic)});
-  const ty=interpolate(f,[0,58,115,170,239],[470,650,455,620,500],{extrapolateRight:"clamp",easing:Easing.inOut(Easing.cubic)});
+  const txBase=interpolate(f,[0,58,115,170,239],[520,820,1080,1350,1510],{extrapolateRight:"clamp",easing:Easing.inOut(Easing.cubic)});
+  const tyBase=interpolate(f,[0,58,115,170,239],[470,650,455,620,500],{extrapolateRight:"clamp",easing:Easing.inOut(Easing.cubic)});
+  // Scene 2's surviving signal exits at the right edge. It now becomes the
+  // same gold target rather than disappearing and being replaced by a new object.
+  const tx=lerp(1660,txBase,entry);
+  const ty=lerp(510,tyBase,entry);
   const unexpectedX=interpolate(f,[38,150],[1840,360],{extrapolateLeft:"clamp",extrapolateRight:"clamp",easing:Easing.inOut(Easing.cubic)});
   const count=f<55?0:f<105?1:f<155?2:3;
   const crowd=Array.from({length:7*12});
@@ -188,10 +201,13 @@ export const V3Scene3:React.FC=()=>{
         const selected=(r===3&&cc===5);
         if(selected)return null;
         const dim=1-reveal*.58;
-        return <Person key={i} x={xx} y={yy} scale={persp} opacity={dim}/>;
+        return <Person key={i} x={xx} y={yy} scale={persp} opacity={dim*entry}/>;
       })}
-      <Person x={tx} y={ty} selected scale={.96}/>
-      <Reticle x={tx} y={ty} r={66} opacity={1-reveal*.72}/>
+      <div style={{position:"absolute",left:tx-260,top:ty-2,width:260,height:4,opacity:(1-entry)*.72,
+        background:"linear-gradient(90deg,transparent,"+GOLD2+")",filter:"blur(1px)",
+        transform:"translateY(-50%)"}}/>
+      <Person x={tx} y={ty} selected scale={lerp(.24,.96,entry)}/>
+      <Reticle x={tx} y={ty} r={66} opacity={(1-reveal*.72)*entry}/>
     </div>
     <div style={{position:"absolute",inset:0,transform:"translate("+(-crowdX*.48)+"px,"+(-crowdY*.38)+"px)"}}>
       <Person x={unexpectedX} y={555} red scale={1.28+revealPeak*.18} opacity={.36+.64*reveal}/>
@@ -199,11 +215,11 @@ export const V3Scene3:React.FC=()=>{
     </div>
     <div style={{position:"absolute",inset:0,pointerEvents:"none",opacity:revealPeak*.86,mixBlendMode:"screen",
       background:"radial-gradient(circle at 19% 51%,rgba(255,231,219,.22) 0 2%,rgba(216,88,73,.14) 9%,transparent 24%)"}}/>
-    <div style={{position:"absolute",left:92,top:100,width:760}}>
+    <div style={{position:"absolute",left:92,top:100,width:760,opacity:entry}}>
       <div style={{fontSize:50,fontWeight:900}}>只盯住<span style={{color:GOLD2}}>金色的人</span>。</div>
       <div style={{fontSize:28,color:"rgba(239,229,204,.48)",marginTop:12}}>数一数，他一共完成了几次明显移动。</div>
     </div>
-    <div style={{position:"absolute",right:105,top:116,width:290,textAlign:"right"}}>
+    <div style={{position:"absolute",right:105,top:116,width:290,textAlign:"right",opacity:entry}}>
       <div style={{fontSize:17,letterSpacing:4,color:"rgba(239,229,204,.36)"}}>MOVE COUNT</div>
       <div style={{fontSize:112,fontWeight:900,color:GOLD2,lineHeight:1,marginTop:4,fontVariantNumeric:"tabular-nums"}}>{count}</div>
     </div>
@@ -229,6 +245,7 @@ const PriorityNode:React.FC<{x:number;y:number;label:string;sub:string;active:nu
 
 export const V3Scene4:React.FC=()=>{
   const f=useCurrentFrame();
+  const entry=phase(f,0,30);
   const nodes=[
     {label:"工作",sub:"未完成目标",x:390,y:405,accent:GOLD2},
     {label:"朋友",sub:"熟悉的人脸",x:690,y:320,accent:CYAN},
@@ -243,27 +260,33 @@ export const V3Scene4:React.FC=()=>{
   const idx=Math.min(nodes.length-1,seg);
   const prev=Math.max(0,idx-1);
   const move=smoother(clamp(((f%cycle)-3)/22));
-  const x=lerp(nodes[prev].x,nodes[idx].x,idx===0?1:move);
-  const y=lerp(nodes[prev].y,nodes[idx].y,idx===0?1:move);
+  const baseX=lerp(nodes[prev].x,nodes[idx].x,idx===0?1:move);
+  const baseY=lerp(nodes[prev].y,nodes[idx].y,idx===0?1:move);
+  const x=lerp(1510,baseX,entry);
+  const y=lerp(500,baseY,entry);
+  const emitterX=lerp(1510,960,entry);
+  const emitterY=lerp(500,555,entry);
   const lockFrame=nodes.map((_,i)=>i*cycle+25).filter(v=>v<240);
   const lockPulse=lockFrame.reduce((m,e)=>{const d=f-e;return d>=0&&d<22?Math.max(m,1-d/22):m;},0);
-  const coneAngle=Math.atan2(y-555,x-960)*180/Math.PI;
-  const dist=Math.sqrt((x-960)*(x-960)+(y-555)*(y-555));
+  const coneAngle=Math.atan2(y-emitterY,x-emitterX)*180/Math.PI;
+  const dist=Math.sqrt((x-emitterX)*(x-emitterX)+(y-emitterY)*(y-emitterY));
 
   return <Stage bokeh={false}>
     <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 50% 52%,rgba(40,32,18,.38),transparent 30%),#040608"}}/>
     <Kicker>PRIORITY MAP / SEARCHLIGHT</Kicker>
+    <div style={{position:"absolute",inset:0,opacity:entry}}>
     {nodes.map((n,i)=>{
       const a=i===idx?1:Math.max(0,.25-Math.abs(i-idx)*.05);
       return <PriorityNode key={n.label} {...n} active={a}/>;
     })}
-    <div style={{position:"absolute",left:960,top:555,width:34,height:34,borderRadius:"50%",transform:"translate(-50%,-50%)",
+    </div>
+    <div style={{position:"absolute",left:emitterX,top:emitterY,width:34,height:34,borderRadius:"50%",transform:"translate(-50%,-50%)",
       background:GOLD2,boxShadow:"0 0 55px 18px rgba(242,184,94,.24)"}}/>
-    <div style={{position:"absolute",left:960,top:554,width:dist,height:120,transformOrigin:"0 50%",transform:"rotate("+coneAngle+"deg) translateY(-60px)",
+    <div style={{position:"absolute",left:emitterX,top:emitterY,width:dist,height:120,transformOrigin:"0 50%",transform:"rotate("+coneAngle+"deg) translateY(-60px)",
       clipPath:"polygon(0 44%,100% 0,100% 100%,0 56%)",background:"linear-gradient(90deg,rgba(242,184,94,.20),rgba(242,184,94,.035))",opacity:.52}}/>
     <Reticle x={x} y={y} r={88+lockPulse*18} accent={nodes[idx].accent}/>
     <Ripple f={f} events={lockFrame} x={e=>nodes[Math.min(nodes.length-1,Math.floor(e/cycle))].x} y={e=>nodes[Math.min(nodes.length-1,Math.floor(e/cycle))].y} color={nodes[idx].accent} maxR={170} layers={3} duration={26}/>
-    <div style={{position:"absolute",left:95,top:105,width:760}}>
+    <div style={{position:"absolute",left:95,top:105,width:760,opacity:intro(f,22,22)}}>
       <div style={{fontSize:54,fontWeight:900,lineHeight:1.1}}>你在寻找什么，</div>
       <div style={{fontSize:54,fontWeight:900,lineHeight:1.1,color:GOLD2,marginTop:6}}>什么就更容易跳出来。</div>
       <div style={{fontSize:25,color:"rgba(239,229,204,.46)",lineHeight:1.55,marginTop:20,width:600}}>搜索灯没有让世界改变，它只是不断重新分配“谁更值得被看见”。</div>
