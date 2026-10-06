@@ -190,7 +190,7 @@ const InfoTile:React.FC<{i:number;stream:number;filter:number;portal:number}>=({
 const FlowTrails:React.FC<{filter:number;portal:number}>=({filter,portal})=>{
   const f=useCurrentFrame();
   return <svg width={W} height={H} style={{position:"absolute",inset:0,overflow:"visible",pointerEvents:"none"}}>
-    {Array.from({length:28}).map((_,i)=>{
+    {Array.from({length:16}).map((_,i)=>{
       const sy=70+hash(i,2)*940;
       const midY=280+hash(i,3)*520;
       const endX=1480+portal*230;
@@ -232,8 +232,6 @@ const SelectionCounter:React.FC<{f:number}>=({f})=>{
   const display=(f>=65&&f<91)?"10,000+":fmt(value);
   const prior1=selectionValue(Math.max(0,f-4));
   const prior2=selectionValue(Math.max(0,f-8));
-  const compress1=phase(f,88,142);
-  const compress2=phase(f,142,176);
   const filter=phase(f,88,176);
   const p=intro(f,12,22);
   const milestone=[68,88,142,176].reduce((m,t)=>Math.max(m,1-clamp(Math.abs(f-t)/8)),0);
