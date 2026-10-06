@@ -308,28 +308,67 @@ export const V3Scene0:React.FC=()=>{
   const fade=phase(f,198,239);
   const camScale=interpolate(f,[0,70,150,239],[1.08,1.02,1.0,1.34],{extrapolateLeft:"clamp",extrapolateRight:"clamp",easing:Easing.inOut(Easing.cubic)});
   const camX=interpolate(f,[0,145,239],[28,0,-185],{extrapolateLeft:"clamp",extrapolateRight:"clamp"});
-  const hit=[68,142,176].reduce((m,e)=>{const d=f-e;return d>=0&&d<12?Math.max(m,(1-d/12)):m;},0);
-  const shakeX=Math.sin(f*2.9)*7*hit;
-  const shakeY=Math.cos(f*2.4)*4*hit;
+  const impactEvents=[
+    {at:68,amp:1.00},
+    {at:88,amp:.52},
+    {at:142,amp:.88},
+    {at:176,amp:1.12},
+  ];
+  const kickX=impactEvents.reduce((sum,e)=>{
+    const d=f-e.at;
+    if(d<0||d>18)return sum;
+    const env=Math.exp(-d/5.2);
+    return sum+(Math.sin((d+.35)*2.08)+Math.sin((d+.7)*.82)*.28)*env*e.amp;
+  },0);
+  const kickY=impactEvents.reduce((sum,e)=>{
+    const d=f-e.at;
+    if(d<0||d>18)return sum;
+    const env=Math.exp(-d/5.8);
+    return sum+(Math.cos((d+.25)*1.77)-.36*Math.sin(d*.94))*env*e.amp;
+  },0);
+  const impactPeak=impactEvents.reduce((m,e)=>{
+    const d=f-e.at;
+    if(d<0||d>14)return m;
+    return Math.max(m,Math.exp(-d/4.4)*e.amp);
+  },0);
+  const midX=kickX*13.5;
+  const midY=kickY*6.2;
+  const farX=kickX*3.2;
+  const farY=kickY*1.7;
+  const nearX=kickX*5.4;
+  const nearY=kickY*2.7;
+  const impactZoom=1+impactPeak*.0065;
+  const tilt=kickX*.16;
+
   return <Stage warm bokeh={false}>
-    <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 77% 52%,rgba(55,28,17,.54),transparent 30%),radial-gradient(circle at 40% 40%,#0E1A20 0%,#070B0F 42%,#020304 100%)"}}/>
-    <div style={{position:"absolute",inset:0,transform:"translate("+(camX+shakeX)+"px,"+shakeY+"px) scale("+camScale+")",transformOrigin:"72% 52%",perspective:1250,transformStyle:"preserve-3d"}}>
-      <FlowTrails filter={filter} portal={portal}/>
-      <div style={{position:"absolute",inset:0,transformStyle:"preserve-3d"}}>
+    <div style={{position:"absolute",inset:-18,background:"radial-gradient(circle at 77% 52%,rgba(55,28,17,.54),transparent 30%),radial-gradient(circle at 40% 40%,#0E1A20 0%,#070B0F 42%,#020304 100%)",
+      transform:"translate("+farX+"px,"+farY+"px) scale("+(1+impactPeak*.0025)+")"}}/>
+    <div style={{position:"absolute",inset:0,transform:"translate("+(camX+midX)+"px,"+midY+"px) scale("+(camScale*impactZoom)+") rotateZ("+tilt+"deg)",transformOrigin:"72% 52%",perspective:1250,transformStyle:"preserve-3d"}}>
+      <div style={{position:"absolute",inset:0,transform:"translate("+(-kickX*2.4)+"px,"+(-kickY*1.2)+"px) translateZ(-34px)"}}>
+        <FlowTrails filter={filter} portal={portal}/>
+      </div>
+      <div style={{position:"absolute",inset:0,transformStyle:"preserve-3d",transform:"translate("+nearX+"px,"+nearY+"px) translateZ(30px)"}}>
         {Array.from({length:44}).map((_,i)=><InfoTile key={i} i={i} stream={stream} filter={filter} portal={portal}/>)}
       </div>
-      <div style={{position:"absolute",left:190,top:350,width:810,height:470,borderRadius:"50%",background:"radial-gradient(ellipse,rgba(3,5,7,.72),rgba(3,5,7,.15) 58%,transparent 78%)",pointerEvents:"none"}}/>
-      <HeadCore x={1490+portal*125} y={565} scale={.86} opacity={.30+.70*stream} portal={portal}/>
-      <SelectionCounter f={f}/>
+      <div style={{position:"absolute",left:190,top:350,width:810,height:470,borderRadius:"50%",background:"radial-gradient(ellipse,rgba(3,5,7,.72),rgba(3,5,7,.15) 58%,transparent 78%)",pointerEvents:"none",
+        transform:"translate("+(-kickX*1.8)+"px,"+(-kickY*.8)+"px) translateZ(-18px)"}}/>
+      <div style={{position:"absolute",inset:0,transform:"translate("+(kickX*2.1)+"px,"+(kickY*1.1)+"px) translateZ(18px)"}}>
+        <HeadCore x={1490+portal*125} y={565} scale={.86} opacity={.30+.70*stream} portal={portal}/>
+      </div>
+      <div style={{position:"absolute",inset:0,transform:"translate("+(-midX*.66)+"px,"+(-midY*.62)+"px) scale("+(1+impactPeak*.0035)+")",transformOrigin:"31% 56%"}}>
+        <SelectionCounter f={f}/>
+      </div>
       <ImpactRipple f={f} events={[68,88,142,176]} x={590} y={600} color={GOLD2} maxR={300}/>
       <ScreenPulse f={f} events={[68,142,176]}/>
     </div>
+    <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:117,opacity:impactPeak*.92,mixBlendMode:"screen",
+      background:"radial-gradient(circle at 31% 56%,rgba(255,246,222,.20) 0 2%,rgba(255,122,73,.12) 10%,transparent 25%)"}}/>
     <HeroTypography f={f} fade={fade}/>
     <div style={{position:"absolute",left:96,bottom:78,zIndex:120,opacity:1-fade}}>
       <div style={{width:56,height:2,background:"linear-gradient(90deg,"+ORANGE+","+GOLD2+")",marginBottom:18}}/>
       <div style={{fontSize:27,color:"rgba(239,229,204,.62)"}}>绝大多数信息，只是路过。</div>
     </div>
-    <div style={{position:"absolute",inset:0,boxShadow:"inset 0 0 220px 80px rgba(0,0,0,.84)",pointerEvents:"none"}}/>
+    <div style={{position:"absolute",inset:0,boxShadow:"inset 0 0 "+(220+impactPeak*75)+"px "+(80+impactPeak*16)+"px rgba(0,0,0,"+(.84-impactPeak*.09)+")",pointerEvents:"none"}}/>
   </Stage>;
 };
 
