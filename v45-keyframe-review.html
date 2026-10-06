@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attention V4.5 · Keyframe Review</title>
+<style>
+  :root{
+    --bg:#05070a; --bg2:#080b0f; --panel:#0b0f14; --line:#1a232c;
+    --gold:#f0d79a; --gold-d:#d9b26f; --cyan:#5bc4d4; --ice:#9fd8e8;
+    --cream:#efe5cc; --dim:rgba(239,229,204,.55); --dim2:rgba(239,229,204,.34);
+    --red:#d85849; --ok:#66b9aa;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--cream);font-family:'Segoe UI','Noto Sans SC','Microsoft YaHei',sans-serif;min-height:100vh}
+  header{display:flex;align-items:center;gap:18px;padding:20px 28px 14px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#070a0e,#05070a);position:sticky;top:0;z-index:50}
+  header h1{font-size:19px;font-weight:800;letter-spacing:.5px}
+  header h1 b{color:var(--gold)}
+  header .sub{font-size:12px;color:var(--dim2);letter-spacing:2px}
+  header .spacer{flex:1}
+  .btn{background:#10161d;border:1px solid var(--line);color:var(--cream);padding:7px 14px;border-radius:6px;
+    font-size:12.5px;cursor:pointer;letter-spacing:.6px;transition:.15s}
+  .btn:hover{border-color:var(--gold-d);color:var(--gold)}
+  .btn.primary{background:linear-gradient(135deg,#3a2f16,#241c0d);border-color:#6e5524;color:var(--gold)}
+  /* 场景 tabs */
+  nav{display:flex;gap:8px;padding:14px 28px;flex-wrap:wrap;border-bottom:1px solid var(--line);background:var(--bg2)}
+  .tab{display:flex;flex-direction:column;gap:3px;padding:10px 16px;border:1px solid var(--line);border-radius:8px;
+    cursor:pointer;background:var(--panel);min-width:158px;transition:.15s}
+  .tab:hover{border-color:#31414f}
+  .tab.active{border-color:var(--gold-d);background:linear-gradient(160deg,#191307,#0d0a05);box-shadow:0 0 24px rgba(217,178,111,.09)}
+  .tab .no{font-size:10.5px;letter-spacing:3px;color:var(--cyan);opacity:.75}
+  .tab .nm{font-size:14.5px;font-weight:700}
+  .tab .nm small{display:block;font-size:10.5px;color:var(--dim2);font-weight:400;margin-top:2px;letter-spacing:1px}
+  .tab .missing{font-size:10px;color:var(--red);margin-top:3px;letter-spacing:.5px}
+  /* 主对比区 */
+  main{padding:22px 28px;max-width:1760px;margin:0 auto}
+  .modebar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+  .modebar .grp{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+  .modebar .grp button{background:var(--panel);border:none;color:var(--dim);padding:7px 15px;font-size:12.5px;cursor:pointer}
+  .modebar .grp button.on{background:#1c2430;color:var(--ice)}
+  .overlayCtl{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--dim)}
+  input[type=range]{accent-color:var(--gold-d)}
+  .stage{position:relative;background:#010203;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  /* side-by-side */
+  .sbs{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  .pane{position:relative}
+  .pane .tag{position:absolute;left:12px;top:12px;z-index:5;font-size:11px;letter-spacing:2.5px;padding:5px 10px;
+    border-radius:4px;background:rgba(2,3,5,.72);backdrop-filter:blur(4px)}
+  .pane.ref .tag{color:var(--cyan);border:1px solid rgba(91,196,212,.35)}
+  .pane.ren .tag{color:var(--gold);border:1px solid rgba(217,178,111,.4)}
+  .pane img{width:100%;display:block}
+  .placeholder{width:100%;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:10px;background:repeating-linear-gradient(45deg,#07090c 0 14px,#05070a 14px 28px);color:var(--dim2);font-size:13px}
+  .placeholder .big{font-size:15px;color:var(--dim)}
+  .placeholder code{color:var(--cyan);background:#0a1118;padding:2px 8px;border-radius:4px;font-size:12px}
+  /* wipe */
+  .wipe{position:relative;user-select:none}
+  .wipe img{width:100%;display:block;pointer-events:none}
+  .wipe .top{position:absolute;inset:0;overflow:hidden}
+  .wipe .top img{position:absolute;left:0;top:0;width:100%}
+  .wipe .handle{position:absolute;top:0;bottom:0;width:2px;background:var(--gold);cursor:ew-resize;z-index:6;
+    box-shadow:0 0 14px rgba(240,215,154,.8)}
+  .wipe .handle::after{content:"⟷";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    background:#0b0f14;border:1px solid var(--gold-d);color:var(--gold);border-radius:50%;width:34px;height:34px;
+    display:flex;align-items:center;justify-content:center;font-size:15px}
+  .wipe .lbl{position:absolute;font-size:11px;letter-spacing:2.5px;padding:5px 10px;z-index:7;
+    background:rgba(2,3,5,.72);border-radius:4px}
+  /* overlay */
+  .ovl{position:relative}
+  .ovl img.r{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+  /* fullscreen overlay */
+  .fs{position:fixed;inset:0;background:rgba(1,2,3,.97);z-index:200;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+  .fs.on{display:flex}
+  .fs img{max-width:96vw;max-height:88vh;border:1px solid var(--line)}
+  .fs .cap{color:var(--dim);font-size:13px;letter-spacing:2px}
+  /* 检查单 */
+  section.qa{margin-top:26px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px 24px}
+  section.qa h2{font-size:15px;letter-spacing:1px;margin-bottom:4px;color:var(--gold)}
+  section.qa .hint{font-size:12px;color:var(--dim2);margin-bottom:14px}
+  .grid10{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+  .item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:7px;background:#080c10}
+  .item .k{font-weight:700;font-size:12.5px;color:var(--ice);min-width:22px}
+  .item .t{flex:1;font-size:12.5px;color:var(--dim)}
+  .item .seg{display:flex;gap:4px}
+  .item .seg button{width:34px;height:24px;border-radius:4px;border:1px solid var(--line);background:#0b1116;color:var(--dim2);font-size:11px;cursor:pointer}
+  .item .seg button.p.on{background:rgba(102,185,170,.16);color:var(--ok);border-color:rgba(102,185,170,.5)}
+  .item .seg button.f.on{background:rgba(216,88,73,.14);color:var(--red);border-color:rgba(216,88,73,.5)}
+  textarea{width:100%;margin-top:14px;background:#070b0e;border:1px solid var(--line);border-radius:7px;color:var(--cream);
+    padding:12px;font-size:13px;min-height:84px;resize:vertical;font-family:inherit;line-height:1.6}
+  textarea:focus{outline:none;border-color:var(--gold-d)}
+  /* contact sheet */
+  section.sheet{margin-top:26px}
+  section.sheet img{width:100%;border:1px solid var(--line);border-radius:10px;display:block}
+  footer{padding:26px 28px;color:var(--dim2);font-size:12px;letter-spacing:.8px;line-height:2;border-top:1px solid var(--line);margin-top:30px}
+  kbd{background:#10161d;border:1px solid var(--line);border-radius:4px;padding:1px 7px;font-size:11px;color:var(--ice)}
+</style>
+</head>
+<body>
+<header>
+  <h1><b>ATTENTION</b> · V4.5 Keyframe Review</h1>
+  <span class="sub">PHASE 2 · STATIC REPLICA GATE</span>
+  <span class="spacer"></span>
+  <span class="sub" id="refState"></span>
+  <button class="btn" id="dlRender">下载渲染 PNG</button>
+  <button class="btn" id="dlRef">下载参考 PNG</button>
+  <button class="btn primary" id="exportMd">导出 Markdown 验收</button>
+</header>
+
+<nav id="tabs"></nav>
+
+<main>
+  <div class="modebar">
+    <div class="grp" id="modeGrp">
+      <button data-m="sbs" class="on">并排对比</button>
+      <button data-m="wipe">Wipe 滑动</button>
+      <button data-m="overlay">叠层透明度</button>
+      <button data-m="toggle">单张切换 (R)</button>
+    </div>
+    <div class="overlayCtl" id="ovlCtl" style="display:none">
+      <span>Reference</span>
+      <input type="range" id="ovlRange" min="0" max="100" value="50">
+      <span>Render</span>
+      <b id="ovlVal" style="color:var(--gold)">50%</b>
+    </div>
+    <div class="overlayCtl" id="wipeCtl" style="display:none">
+      <span>参考图透过</span>
+      <input type="range" id="wipeRange" min="0" max="100" value="50">
+      <b id="wipeVal" style="color:var(--gold)">50%</b>
+    </div>
+    <button class="btn" id="fsBtn">全屏 (F)</button>
+    <span style="font-size:12px;color:var(--dim2)">快捷键 <kbd>1</kbd>–<kbd>6</kbd> 切场景 · <kbd>R</kbd> 换图 · <kbd>F</kbd> 全屏</span>
+  </div>
+
+  <div class="stage" id="stage"></div>
+
+  <section class="qa">
+    <h2 id="qaTitle">验收单 · A–J</h2>
+    <div class="hint">不看文字内容时，两张图的整体视觉气质必须明显属于同一个画面系统。若 Render 明显像 UI dashboard 而 Reference 明显像电影 motion graphics —— 判定失败。</div>
+    <div class="grid10" id="checklist"></div>
+    <textarea id="notes" placeholder="本场景 timestamp notes：哪里不像？哪里过了？下一步改什么？（会随 Markdown 一起导出）"></textarea>
+  </section>
+
+  <section class="sheet">
+    <h2 style="font-size:15px;letter-spacing:1px;color:var(--gold);margin-bottom:12px">六场景 Contact Sheet（Remotion 真实渲染拼图）</h2>
+    <img src="out/v45/v45_contact_sheet.png" alt="contact sheet" onerror="this.outerHTML='<div class=&quot;placeholder&quot; style=&quot;border:1px solid var(--line);border-radius:10px&quot;><div class=&quot;big\">contact sheet 未生成</div><div>运行 <code>npx remotion still src/v45/index.tsx V45ContactSheet out/v45/v45_contact_sheet.png --frame=96</code></div></div>'">
+  </section>
+</main>
+
+<div class="fs" id="fs"><img id="fsImg" src=""><div class="cap" id="fsCap"></div></div>
+
+<footer>
+  V4.5 · v4-5-cinematic-rebuild · Phase 1 静态关键帧复刻门。<br>
+  参考图目录 <code>public/references/v45/</code> · 渲染输出 <code>out/v45/</code> · 复刻源码 <code>src/v45/</code>。<br>
+  通过标准：暂停任意关键场景，它本身就是一张足够漂亮的 motion-design poster。
+</footer>
+
+<script>
+const SCENES=[
+  {n:"01",file:"01_attention.png",en:"ATTENTION",zh:"信号洪流 · 注意是唯一入口"},
+  {n:"02",file:"02_filter.png",en:"FILTER",zh:"层级优先 · 穿门才成信号"},
+  {n:"03",file:"03_searchlight.png",en:"SEARCHLIGHT",zh:"探照灯 · 一处亮成工作区"},
+  {n:"04",file:"04_linking.png",en:"LINKING",zh:"网络 · 压出一条轨道"},
+  {n:"05",file:"05_choice.png",en:"CHOICE",zh:"分叉 · 一条亮一条熄"},
+  {n:"06",file:"06_growth.png",en:"GROWTH",zh:"页 · 时间 · 长成结构"},
+];
+const ITEMS=[
+  ["A","构图剪影（silhouette）"],["B","标题尺度（title scale）"],
+  ["C","主体位置（hero position）"],["D","光分布（light distribution）"],
+  ["E","负空间（negative space）"],["F","前景遮挡（fg occlusion）"],
+  ["G","纵深结构（depth layers）"],["H","金/青平衡（gold-cyan balance）"],
+  ["I","材质印象（material）"],["J","字体构图（typography comp）"],
+];
+const REF_BASE="public/references/v45/", REN_BASE="out/v45/";
+let cur=0, mode="sbs", showRefInToggle=false;
+const state=SCENES.map(()=>({checks:{},notes:""}));
+const refOK=SCENES.map(()=>null); // null=unknown
+
+function imgExists(url){return new Promise(res=>{const i=new Image();i.onload=()=>res(true);i.onerror=()=>res(false);i.src=url;});}
+
+/* tabs */
+const tabs=document.getElementById("tabs");
+SCENES.forEach((s,i)=>{
+  const d=document.createElement("div");d.className="tab";d.dataset.i=i;
+  d.innerHTML=`<span class="no">KEYFRAME ${s.n}</span><span class="nm">${s.en}<small>${s.zh}</small></span><span class="missing" style="display:none">⚠ 参考图缺失</span>`;
+  d.onclick=()=>select(i);tabs.appendChild(d);
+});
+
+function select(i){cur=i;showRefInToggle=false;document.querySelectorAll(".tab").forEach((t,j)=>t.classList.toggle("active",j===i));
+  document.getElementById("qaTitle").textContent=`验收单 · ${SCENES[i].n} ${SCENES[i].en} · A–J`;
+  document.getElementById("notes").value=state[i].notes;
+  renderChecklist();renderStage();}
+
+function refSrc(){return REF_BASE+SCENES[cur].file;}
+function renSrc(){return REN_BASE+SCENES[cur].file;}
+
+function ph(kind){ // placeholder html
+  if(kind==="ref")return `<div class="placeholder"><div class="big">等待 Image 2.5 参考图</div>
+    <div>把用户生成的关键帧放到 <code>${REF_BASE}${SCENES[cur].file}</code></div>
+    <div>放好后刷新本页，对比 / wipe / overlay 立即生效</div></div>`;
+  return `<div class="placeholder"><div class="big">渲染图缺失</div><div>运行 <code>npx remotion still src/v45/index.tsx V45${SCENES[cur].en} ${REN_BASE}${SCENES[cur].file} --frame=96</code></div></div>`;
+}
+
+function renderStage(){
+  const st=document.getElementById("stage");
+  const rOK=refOK[cur]===true, rDone=refOK[cur]!==null;
+  if(mode==="sbs"){
+    st.innerHTML=`<div class="sbs">
+      <div class="pane ref"><span class="tag">REFERENCE · IMAGE 2.5</span>${rOK?`<img src="${refSrc()}" onerror="this.outerHTML=window.__phRef()">`:ph("ref")}</div>
+      <div class="pane ren"><span class="tag">REMOTION RENDER · STILL 96</span><img src="${renSrc()}" onerror="this.outerHTML=window.__phRen()"></div>
+    </div>`;
+  }else if(mode==="wipe"){
+    st.innerHTML=`<div class="wipe" id="wipeBox">
+      <img src="${renSrc()}" onerror="this.outerHTML=window.__phRen()">
+      ${rOK?`<div class="top" id="wipeTop"><img src="${refSrc()}"></div><div class="handle" id="wipeHandle"></div>
+      <span class="lbl" style="left:12px;top:12px;color:var(--cyan)">REFERENCE</span>
+      <span class="lbl" style="right:12px;top:12px;color:var(--gold)">RENDER</span>`:`<div class="top" style="width:0"><div class="placeholder" style="height:0"></div></div>`}
+    </div>`;
+    if(rOK)wireWipe();
+    document.getElementById("wipeCtl").style.display=rOK?"flex":"none";
+  }else if(mode==="overlay"){
+    const v=document.getElementById("ovlRange").value;
+    st.innerHTML=`<div class="ovl">
+      <img src="${refSrc()}" style="width:100%;display:block" onerror="this.outerHTML=window.__phRef()">
+      <img class="r" src="${renSrc()}" style="opacity:${v/100}" onerror="this.remove()">
+    </div>`;
+  }else{ // toggle
+    const useRef=showRefInToggle&&rOK;
+    st.innerHTML=`<div class="pane ${useRef?"ref":"ren"}">
+      <span class="tag">${useRef?"REFERENCE · IMAGE 2.5":"REMOTION RENDER · STILL 96"}</span>
+      <img src="${useRef?refSrc():renSrc()}" style="width:100%;display:block" onerror="this.outerHTML=window.__phRef()">
+    </div>`;
+  }
+  document.getElementById("ovlCtl").style.display=(mode==="overlay"&&rOK)?"flex":"none";
+  document.getElementById("wipeCtl").style.display=(mode==="wipe"&&rOK)?"flex":"none";
+}
+window.__phRef=()=>ph("ref");
+window.__phRen=()=>ph("ren");
+
+function wireWipe(){
+  const box=document.getElementById("wipeBox"),top=document.getElementById("wipeTop"),h=document.getElementById("wipeHandle");
+  const set=pct=>{top.style.width=pct+"%";h.style.left=`calc(${pct}% - 1px)`;};
+  set(document.getElementById("wipeRange").value);
+  const drag=e=>{const r=box.getBoundingClientRect();const x=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
+    set(Math.max(0,Math.min(100,x/r.width*100)));
+    document.getElementById("wipeRange").value=Math.max(0,Math.min(100,x/r.width*100));
+    document.getElementById("wipeVal").textContent=Math.round(Math.max(0,Math.min(100,x/r.width*100)))+"%";};
+  let on=false;
+  const dn=e=>{on=true;drag(e);};
+  const mv=e=>{if(on)drag(e);};
+  const up=()=>on=false;
+  h.addEventListener("mousedown",dn);h.addEventListener("touchstart",dn,{passive:true});
+  window.addEventListener("mousemove",mv);window.addEventListener("touchmove",mv,{passive:true});
+  window.addEventListener("mouseup",up);window.addEventListener("touchend",up);
+  document.getElementById("wipeRange").oninput=e=>{set(e.target.value);document.getElementById("wipeVal").textContent=e.target.value+"%";};
+}
+
+/* checklist */
+function renderChecklist(){
+  const g=document.getElementById("checklist");g.innerHTML="";
+  ITEMS.forEach(([k,t])=>{
+    const d=document.createElement("div");d.className="item";
+    d.innerHTML=`<span class="k">${k}</span><span class="t">${t}</span>
+      <span class="seg"><button class="p ${state[cur].checks[k]==="p"?"on":""}" title="通过">PASS</button>
+      <button class="f ${state[cur].checks[k]==="f"?"on":""}" title="失败">FAIL</button></span>`;
+    d.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{
+      state[cur].checks[k]=state[cur].checks[k]===(b.classList.contains("p")?"p":"f")?"":(b.classList.contains("p")?"p":"f");
+      renderChecklist();});
+    g.appendChild(d);
+  });
+}
+document.getElementById("notes").oninput=e=>state[cur].notes=e.target.value;
+
+/* modes */
+document.querySelectorAll("#modeGrp button").forEach(b=>b.onclick=()=>{
+  mode=b.dataset.m;
+  document.querySelectorAll("#modeGrp button").forEach(x=>x.classList.toggle("on",x===b));
+  renderStage();});
+document.getElementById("ovlRange").oninput=e=>{document.getElementById("ovlVal").textContent=e.target.value+"%";renderStage();};
+
+/* fullscreen */
+const fs=document.getElementById("fs");
+function openFS(src,cap){document.getElementById("fsImg").src=src;document.getElementById("fsCap").textContent=cap;fs.classList.add("on");}
+document.getElementById("fsBtn").onclick=()=>openFS(renSrc(),`${SCENES[cur].n} ${SCENES[cur].en} · REMOTION RENDER 1920×1080`);
+fs.onclick=()=>fs.classList.remove("on");
+document.getElementById("stage").addEventListener("dblclick",()=>openFS(renSrc(),`${SCENES[cur].n} ${SCENES[cur].en} · 1920×1080`));
+
+/* downloads */
+function dl(url,name){const a=document.createElement("a");a.href=url;a.download=name;a.click();}
+document.getElementById("dlRender").onclick=()=>dl(renSrc(),`v45_${SCENES[cur].file}`);
+document.getElementById("dlRef").onclick=()=>{if(refOK[cur])dl(refSrc(),`ref_${SCENES[cur].file}`);else alert("参考图尚未放入 public/references/v45/");};
+
+/* export */
+document.getElementById("exportMd").onclick=()=>{
+  let md=`# Attention V4.5 · Keyframe Review 验收\n\n导出时间：${new Date().toLocaleString()}\n\n`;
+  SCENES.forEach((s,i)=>{
+    const st=state[i];const keys=Object.keys(st.checks).filter(k=>st.checks[k]);
+    const fails=keys.filter(k=>st.checks[k]==="f").length;
+    const ref=refOK[i]===true?"已就位":"缺失";
+    md+=`## ${s.n} ${s.en} — ${s.zh}\n- 参考图：${ref} ｜ 渲染：out/v45/${s.file}\n- 结论：${fails===0&&keys.length?"✅ 全部通过":fails?`❌ ${fails} 项失败`:"⚪ 未逐项打分"}\n`;
+    if(keys.length){md+=`| 项 | 判定 |\n|---|---|\n`;ITEMS.forEach(([k,t])=>{if(st.checks[k])md+=`| ${k} ${t} | ${st.checks[k]==="p"?"PASS":"**FAIL**"} |\n`;});}
+    if(st.notes.trim())md+=`\n**Notes:** ${st.notes.trim()}\n`;
+    md+="\n";
+  });
+  md+=`---\nContact sheet: out/v45/v45_contact_sheet.png\nBranch: v4-5-cinematic-rebuild\n`;
+  const b=new Blob([md],{type:"text/markdown"});const a=document.createElement("a");
+  a.href=URL.createObjectURL(b);a.download="v45-keyframe-feedback.md";a.click();};
+
+/* keys */
+window.addEventListener("keydown",e=>{
+  if(e.target.tagName==="TEXTAREA"||e.target.tagName==="INPUT")return;
+  if(e.key>="1"&&e.key<="6")select(+e.key-1);
+  if(e.key==="r"||e.key==="R"){showRefInToggle=!showRefInToggle;if(mode==="toggle")renderStage();}
+  if(e.key==="f"||e.key==="F"){fs.classList.contains("on")?fs.classList.remove("on"):openFS(renSrc(),`${SCENES[cur].n} · 1920×1080`);}
+});
+
+/* boot: probe references */
+(async()=>{
+  for(let i=0;i<SCENES.length;i++)refOK[i]=await imgExists(REF_BASE+SCENES[i].file);
+  const n=refOK.filter(Boolean).length;
+  document.getElementById("refState").textContent=n?`REFERENCES ${n}/6`:"REFERENCES 0/6 · 待放入 public/references/v45/";
+  document.querySelectorAll(".tab").forEach((t,i)=>{t.querySelector(".missing").style.display=refOK[i]?"none":"block";});
+  select(0);
+})();
+</script>
+</body>
+</html>

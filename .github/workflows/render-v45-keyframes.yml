@@ -1,0 +1,79 @@
+name: Render Attention V4.5 Keyframes
+
+on:
+  push:
+    branches: [v4-5-cinematic-rebuild, main]
+    paths:
+      - 'src/v45/**'
+      - 'public/references/v45/**'
+      - 'v45-keyframe-review.html'
+      - '.github/workflows/render-v45-keyframes.yml'
+      - 'package.json'
+      - 'tsconfig.json'
+  workflow_dispatch:
+
+jobs:
+  keyframes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk ffmpeg
+          npm install --no-audit --no-fund
+
+      - name: Compile check (tsc --noEmit)
+        run: npx tsc --noEmit
+
+      - name: Verify V4.5 compositions
+        run: npx remotion compositions src/v45/index.tsx
+
+      - name: Render six keyframe stills (settled frame 96)
+        run: |
+          mkdir -p out/v45
+          npx remotion still src/v45/index.tsx V45Attention   out/v45/01_attention.png   --frame=96 --image-format=png
+          npx remotion still src/v45/index.tsx V45Filter      out/v45/02_filter.png      --frame=96 --image-format=png
+          npx remotion still src/v45/index.tsx V45Searchlight out/v45/03_searchlight.png --frame=96 --image-format=png
+          npx remotion still src/v45/index.tsx V45Linking     out/v45/04_linking.png     --frame=96 --image-format=png
+          npx remotion still src/v45/index.tsx V45Choice      out/v45/05_choice.png      --frame=96 --image-format=png
+          npx remotion still src/v45/index.tsx V45Growth      out/v45/06_growth.png      --frame=96 --image-format=png
+
+      - name: Render 3x2 contact sheet
+        run: npx remotion still src/v45/index.tsx V45ContactSheet out/v45/v45_contact_sheet.png --frame=96 --image-format=png
+
+      - name: Structural gate (V4.5 P0)
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          common = Path('src/v45/v45-common.tsx').read_text(encoding='utf-8')
+          for token in ['STILL_FRAME', 'settle(', 'SignalShard', 'CinemaFrame', 'GiantType']:
+              assert token in common, f'missing V4.5 system token: {token}'
+          import re
+          for f in Path('src/v45').glob('*.tsx'):
+              s = f.read_text(encoding='utf-8')
+              for bad in ['Math.random(', 'Date.now(', 'requestAnimationFrame']:
+                  assert bad not in s, f'{f.name} uses non-deterministic {bad}'
+          print('V4.5 determinism + system gate passed')
+          PY
+
+      - name: Assemble review artifact
+        run: |
+          mkdir -p artifact/source
+          cp v45-keyframe-review.html artifact/
+          cp -r out/v45 artifact/out-v45
+          cp -r public/references/v45 artifact/references-v45 2>/dev/null || true
+          cp -r src/v45 artifact/source/src-v45
+          cp package.json tsconfig.json artifact/source/ 2>/dev/null || true
+          cp .github/workflows/render-v45-keyframes.yml artifact/source/ 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: attention-v45-keyframe-review
+          path: artifact
