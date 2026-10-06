@@ -12,7 +12,7 @@ import {W, H, FPS, DISPLAY} from "./v45-common";
    第一轮：静态复刻。STILL_FRAME(=96) 之后画面完全静止。 */
 
 /* ContactSheet：六场景真实渲染拼图（3×2，每格 640×360） */
-const CELL_W = 640, CELL_H = 360;
+const CELL_W = 640, CELL_H = 360, SHEET_TOP = 180;
 const SHEET: { Comp: React.FC; label: string }[] = [
   { Comp: V45Attention, label: "ATTENTION / SIGNAL FLOOD" },
   { Comp: V45Filter, label: "FILTER / PRIORITY" },
@@ -29,7 +29,7 @@ const V45ContactSheet: React.FC = () => (
       return (
         <div key={label} style={{
           position: "absolute",
-          left: col * CELL_W, top: row * CELL_H, width: CELL_W, height: CELL_H,
+          left: col * CELL_W, top: SHEET_TOP + row * CELL_H, width: CELL_W, height: CELL_H,
           overflow: "hidden", outline: "1px solid rgba(159,216,232,.14)", outlineOffset: -1,
         }}>
           <div style={{

@@ -1,5 +1,5 @@
 import React from "react";
-import {AbsoluteFill, Img, getInputProps, useCurrentFrame} from "remotion";
+import {AbsoluteFill, Img, getInputProps, useCurrentFrame, staticFile, delayRender, continueRender} from "remotion";
 
 /* ============================================================
    V4.5 CINEMATIC SYSTEM
@@ -7,6 +7,15 @@ import {AbsoluteFill, Img, getInputProps, useCurrentFrame} from "remotion";
    本文件只负责静态画面质量 + 为 Phase 2 动态预留确定性钩子。
    静帧规则：settle 之后（默认 frame>=60）完全静止，无 drift / 无呼吸。
    ============================================================ */
+
+/* 巨字显示字体：仓库自带 Archivo Black（本地与 CI 完全一致，不依赖系统字体） */
+if (typeof document !== "undefined") {
+  const unlock = delayRender("v45: load Archivo Black");
+  const face = new FontFace("Archivo Black", `url(${staticFile("fonts/ArchivoBlack.woff2")})`);
+  face.load()
+    .then(() => { (document.fonts as unknown as { add: (f: FontFace) => void }).add(face); continueRender(unlock); })
+    .catch(() => { continueRender(unlock); });
+}
 
 export const W = 1920;
 export const H = 1080;
@@ -25,7 +34,7 @@ export const C = {
 };
 
 export const DISPLAY =
-  "'Segoe UI Black','Arial Black','Archivo Black','Noto Sans CJK SC','Noto Sans SC',sans-serif";
+  "'Archivo Black','Segoe UI Black','Arial Black','Noto Sans CJK SC','Noto Sans SC',sans-serif";
 export const CJK =
   "'Noto Sans CJK SC','Noto Sans SC','Microsoft YaHei',sans-serif";
 
@@ -364,7 +373,7 @@ export const SubText: React.FC<{
   <div style={{
     position: "absolute", left: x, top: y, width, zIndex, opacity, textAlign: align,
     fontFamily: CJK, fontSize: size, lineHeight: 1.62, letterSpacing: 1.2,
-    color: "rgba(239,229,204,.68)", textShadow: "0 3px 26px rgba(0,0,0,.65)",
+    color: "rgba(239,229,204,.80)", textShadow: "0 3px 26px rgba(0,0,0,.65)",
   }}>{lines}</div>
 );
 

@@ -84,7 +84,7 @@ export const V45Choice: React.FC = () => {
       ))}
 
       {/* 05 巨字 CHOICE —— ember 渐变，右缘出血 */}
-      <GiantType word="CHOICE" x={1088} y={598} size={338} tracking={-11}
+      <GiantType word="CHOICE" x={962} y={606} size={300} tracking={-9}
         variant="ember" zIndex={30} opacity={0.96 * p} />
 
       {/* 13 bloom：分叉点余烬光 */}

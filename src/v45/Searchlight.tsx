@@ -158,7 +158,7 @@ export const V45Searchlight: React.FC = () => {
       {[[1010, 330, 120, 78, -6], [1655, 690, 132, 86, 8], [1120, 742, 98, 64, -4]].map(([x, y, w, h, r], i) => (
         <div key={i} style={{
           position: "absolute", left: x, top: y, width: w, height: h, zIndex: 24,
-          transform: `translate(-50%,-50%) rotate(${r}deg)`, opacity: 0.3 * p,
+          transform: `translate(-50%,-50%) rotate(${r}deg)`, opacity: 0.38 * p,
           border: "1px solid rgba(159,216,232,.22)",
           background: "linear-gradient(160deg, rgba(126,158,170,.04), rgba(7,12,15,.5))",
         }} />
@@ -168,13 +168,13 @@ export const V45Searchlight: React.FC = () => {
       <HoloPanel kind="brief" x={1330} y={508} w={330} h={216} rotY={-8} rotZ={-1.5}
         accent={C.gold} focus={1} p={p} />
       <HoloPanel kind="chart" x={1098} y={414} w={188} h={128} rotY={16} rotZ={2}
-        accent={C.cyan} focus={0.34} p={p} />
+        accent={C.cyan} focus={0.44} p={p} />
       <HoloPanel kind="list" x={1102} y={678} w={176} h={118} rotY={12} rotZ={-2}
-        accent={C.teal} focus={0.3} p={p} />
+        accent={C.teal} focus={0.4} p={p} />
       <HoloPanel kind="media" x={1583} y={404} w={172} h={116} rotY={-18} rotZ={3}
-        accent={C.ice} focus={0.26} p={p} />
+        accent={C.ice} focus={0.36} p={p} />
       <HoloPanel kind="note" x={1596} y={682} w={190} h={126} rotY={-14} rotZ={-3}
-        accent={C.cream} focus={0.24} p={p} />
+        accent={C.cream} focus={0.34} p={p} />
 
       {/* 13 bloom：主体与聚焦面板 */}
       <Bloom x={HERO_X} y={HERO_Y} r={330} color="rgba(242,166,90,.14)" strength={p} />
