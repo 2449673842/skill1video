@@ -33,27 +33,10 @@ const Ripple:React.FC<{
   </div>
 );
 
-const MicroShake:React.FC<{f:number;events:number[];children:React.ReactNode;strength?:number}>=({f,events,children,strength=7})=>{
-  const peak=events.reduce((m,e)=>{
-    const d=f-e;
-    if(d<0||d>15)return m;
-    return Math.max(m,Math.exp(-d/4.8));
-  },0);
-  const ox=events.reduce((sum,e)=>{
-    const d=f-e;
-    if(d<0||d>17)return sum;
-    return sum+Math.sin((d+.25)*2.15)*Math.exp(-d/5.4);
-  },0);
-  const oy=events.reduce((sum,e)=>{
-    const d=f-e;
-    if(d<0||d>17)return sum;
-    return sum+Math.cos((d+.55)*1.78)*Math.exp(-d/5.9);
-  },0);
-  const dx=ox*strength;
-  const dy=oy*strength*.48;
-  const rot=ox*strength*.018;
-  return <div style={{position:"absolute",inset:-10,transform:"translate("+dx+"px,"+dy+"px) rotateZ("+rot+"deg) scale("+(1+peak*.0035)+")",
-    transformOrigin:"50% 54%"}}>{children}</div>;
+const MicroShake:React.FC<{f:number;events:number[];children:React.ReactNode;strength?:number}>=({children})=>{
+  // V4.2: no generic camera shake. Impact is expressed by the local object
+  // (ripple / highlight / lock), so a quiet frame is allowed to stay quiet.
+  return <div style={{position:"absolute",inset:-10}}>{children}</div>;
 };
 
 const FilterPlane:React.FC<{x:number;label:string;sub:string;accent:string;active:number;index:number}>=({x,label,sub,accent,active,index})=>{
@@ -93,8 +76,11 @@ export const V3Scene2:React.FC=()=>{
     {x:1450,label:"经验",sub:"与你的过去相连",accent:TEAL,cross:196},
   ];
   const x=interpolate(f,[0,38,210,239],[1210,410,1540,1660],{extrapolateLeft:"clamp",extrapolateRight:"clamp",easing:Easing.inOut(Easing.cubic)});
-  const y=545+Math.sin(f*.035)*58-interpolate(f,[0,239],[0,34],{extrapolateRight:"clamp"});
-  const strength=.75+.25*Math.sin(f*.11);
+  // V4.2: the signal moves in authored steps with readable holds instead of
+  // an always-on sine drift.
+  const y=interpolate(f,[0,38,58,86,104,132,150,178,196,224,239],
+    [545,545,535,535,558,558,528,528,548,548,520],
+    {extrapolateLeft:"clamp",extrapolateRight:"clamp",easing:Easing.inOut(Easing.cubic)});
   const inherited=1-phase(f,0,34);
   const entry=phase(f,0,34);
   const entryPan=lerp(118,0,entry);
@@ -103,11 +89,15 @@ export const V3Scene2:React.FC=()=>{
   const title=intro(f,30,24);
   const distractors=["消息","广告","疼痛","音乐","价格","气味","人脸","声音","风险","机会","通知","回忆"];
   const gateEvents=gates.map(g=>g.cross);
-  const gateFocus=gateEvents.reduce((m,e)=>Math.max(m,1-clamp(Math.abs(f-e)/28)),0);
-  const camTrack=phase(f,22,224);
-  const camX=clamp((960-x)*.18,-125,125)*camTrack;
-  const camY=clamp((535-y)*.16,-48,48)*camTrack;
-  const camZoom=1+camTrack*.018+gateFocus*.045;
+  const gateFocus=gateEvents.reduce((m,e)=>Math.max(m,1-clamp(Math.abs(f-e)/24)),0);
+  const strength=.78+gateFocus*.22;
+  // The camera waits. It only reframes after the second and fourth locks,
+  // which turns camera movement into a reveal rather than a metronome.
+  const move1=smoother(clamp((f-108)/22));
+  const move2=smoother(clamp((f-194)/24));
+  const camX=lerp(0,-46,move1)+lerp(0,-34,move2);
+  const camY=lerp(0,10,move1)+lerp(0,-8,move2);
+  const camZoom=1+move1*.018+move2*.018+gateFocus*.014;
 
   return <Stage bokeh={false}>
     <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 62% 49%,rgba(40,31,18,.34),transparent 34%),radial-gradient(circle at 34% 42%,#102027 0%,#070B0E 42%,#020304 100%)"}}/>
@@ -164,9 +154,7 @@ const Person:React.FC<{x:number;y:number;selected?:boolean;red?:boolean;scale?:n
 };
 
 const Reticle:React.FC<{x:number;y:number;r:number;opacity?:number;accent?:string}>=({x,y,r,opacity=1,accent=GOLD2})=>{
-  const f=useCurrentFrame();
-  const breathe=1+.045*Math.sin(f*.15);
-  return <div style={{position:"absolute",left:x,top:y,width:r*2,height:r*2,transform:"translate(-50%,-50%) scale("+breathe+")",borderRadius:"50%",
+  return <div style={{position:"absolute",left:x,top:y,width:r*2,height:r*2,transform:"translate(-50%,-50%)",borderRadius:"50%",
     border:"2px solid "+accent,opacity,boxShadow:"0 0 24px "+accent+"33"}}>
     {[0,90,180,270].map(a=><div key={a} style={{position:"absolute",left:"50%",top:"50%",width:r+26,height:2,transformOrigin:"0 50%",transform:"rotate("+a+"deg)",background:"linear-gradient(90deg,"+accent+",transparent 65%)"}}/>)}
   </div>;
@@ -188,15 +176,17 @@ export const V3Scene3:React.FC=()=>{
   const rippleEvent=[168];
   const rd=f-168;
   const revealPeak=rd>=0&&rd<=16?Math.exp(-rd/5.2):0;
-  const revealOsc=rd>=0&&rd<=18?Math.sin((rd+.35)*2.05)*Math.exp(-rd/5.8):0;
-  const crowdX=revealOsc*10.5;
-  const crowdY=(rd>=0&&rd<=18?Math.cos((rd+.5)*1.72)*Math.exp(-rd/6.2):0)*4.4;
-  const focusHandoff=phase(f,142,184);
-  const focusX=lerp(tx,360,focusHandoff);
-  const focusY=lerp(ty,555,focusHandoff);
-  const camX=clamp((960-focusX)*.16,-105,105);
-  const camY=clamp((540-focusY)*.12,-52,52);
-  const camZoom=1.015+phase(f,18,120)*.018+focusHandoff*.065+revealPeak*.025;
+  // V4.2: the crowd itself does not shake when the surprise is revealed.
+  // The red-person reveal and ripple carry the impact; the camera hands focus
+  // across once, then settles.
+  const crowdX=0;
+  const crowdY=0;
+  const focusHandoff=phase(f,146,184);
+  const focusX=lerp(960,360,focusHandoff);
+  const focusY=lerp(540,555,focusHandoff);
+  const camX=clamp((960-focusX)*.13,-82,82);
+  const camY=clamp((540-focusY)*.10,-28,28);
+  const camZoom=1+focusHandoff*.055+revealPeak*.008;
 
   return <Stage warm bokeh={false}>
     <div style={{position:"absolute",inset:-12,background:"radial-gradient(circle at 55% 52%,rgba(30,39,37,.42),transparent 36%),linear-gradient(180deg,#090D0F,#030405)",
@@ -238,7 +228,7 @@ export const V3Scene3:React.FC=()=>{
       <div style={{fontSize:17,letterSpacing:4,color:"rgba(239,229,204,.36)"}}>MOVE COUNT</div>
       <div style={{fontSize:112,fontWeight:900,color:GOLD2,lineHeight:1,marginTop:4,fontVariantNumeric:"tabular-nums"}}>{count}</div>
     </div>
-    {reveal>.12&&<div style={{position:"absolute",left:965,top:285,width:760,opacity:reveal,transform:"translate(-50%,-50%) scale("+(1+revealPeak*.055+.02*Math.sin(f*.18)) +")",textAlign:"center"}}>
+    {reveal>.12&&<div style={{position:"absolute",left:965,top:285,width:760,opacity:reveal,transform:"translate(-50%,-50%) scale("+(1+revealPeak*.045)+")",textAlign:"center"}}>
       <div style={{fontSize:54,fontWeight:900,color:RED,textShadow:"0 0 25px rgba(216,88,73,.30)"}}>刚才那个红色的人，你看见了吗？</div>
       <div style={{fontSize:25,color:"rgba(239,229,204,.54)",marginTop:14}}>他一直从画面里经过，但你的任务把焦点锁在了别处。</div>
     </div>}
@@ -267,8 +257,8 @@ export const V3Scene4:React.FC=()=>{
     {label:"危险",sub:"高优先级警报",x:1080,y:390,accent:RED},
     {label:"机会",sub:"与目标匹配",x:1455,y:335,accent:GOLD2},
     {label:"通知",sub:"即时打断",x:560,y:735,accent:ORANGE},
-    {label:"新闻",sub:"新奇变化",x:1010,y:700,accent:CYAN},
     {label:"价格",sub:"正在比较",x:1450,y:730,accent:GOLD2},
+    {label:"新闻",sub:"新奇变化",x:1010,y:700,accent:CYAN},
   ];
   const cycle=34;
   const seg=Math.floor(f/cycle);
@@ -285,10 +275,14 @@ export const V3Scene4:React.FC=()=>{
   const lockPulse=lockFrame.reduce((m,e)=>{const d=f-e;return d>=0&&d<22?Math.max(m,1-d/22):m;},0);
   const coneAngle=Math.atan2(y-emitterY,x-emitterX)*180/Math.PI;
   const dist=Math.sqrt((x-emitterX)*(x-emitterX)+(y-emitterY)*(y-emitterY));
-  const camTrack=phase(f,10,230);
-  const camX=clamp((960-x)*.14,-112,112)*camTrack;
-  const camY=clamp((540-y)*.12,-58,58)*camTrack;
-  const camZoom=1+camTrack*.022+lockPulse*.038;
+  // The searchlight can move while the camera stays put. Two deliberate
+  // reframes are enough to show a change of attention without breathing on
+  // every node.
+  const move1=smoother(clamp((f-92)/22));
+  const move2=smoother(clamp((f-194)/22));
+  const camX=lerp(0,-28,move1)+lerp(0,18,move2);
+  const camY=lerp(0,8,move1)+lerp(0,-28,move2);
+  const camZoom=1+move1*.018+move2*.016+lockPulse*.010;
 
   return <Stage bokeh={false}>
     <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 50% 52%,rgba(40,32,18,.38),transparent 30%),#040608"}}/>
