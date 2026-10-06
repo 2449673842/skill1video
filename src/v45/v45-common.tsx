@@ -373,17 +373,31 @@ export const SubText: React.FC<{
    ============================================================ */
 export const FGShard: React.FC<{
   x: number; y: number; w?: number; h?: number; rotate?: number; scale?: number;
-  opacity?: number; blur?: number; tint?: string;
-}> = ({ x, y, w = 700, h = 460, rotate = -18, scale = 1, opacity = 0.16, blur = 16, tint }) => (
-  <div style={{
-    position: "absolute", left: x, top: y, width: w * scale, height: h * scale,
-    transform: `translate(-50%,-50%) rotate(${rotate}deg)`,
-    clipPath: "polygon(22% 0%, 100% 20%, 78% 100%, 0% 82%)",
-    background: `linear-gradient(148deg, rgba(120,152,164,.16), rgba(10,16,20,.52) 46%, rgba(4,8,10,.74))`,
-    opacity, filter: `blur(${blur}px)`, pointerEvents: "none",
-    boxShadow: tint ? `0 0 90px ${tint}` : undefined,
-  }} />
-);
+  opacity?: number; blur?: number; tint?: string; edge?: string;
+}> = ({ x, y, w = 700, h = 460, rotate = -18, scale = 1, opacity = 0.16, blur = 16, tint, edge }) => {
+  const fw = w * scale, fh = h * scale;
+  return (
+    <div style={{
+      position: "absolute", left: x, top: y, width: fw, height: fh,
+      transform: `translate(-50%,-50%) rotate(${rotate}deg)`,
+      opacity, filter: `blur(${blur}px)`, pointerEvents: "none",
+    }}>
+      <div style={{
+        position: "absolute", inset: 0,
+        clipPath: "polygon(22% 0%, 100% 20%, 78% 100%, 0% 82%)",
+        background: `linear-gradient(148deg, rgba(120,152,164,.16), rgba(10,16,20,.52) 46%, rgba(4,8,10,.74))`,
+        boxShadow: tint ? `0 0 90px ${tint}` : undefined,
+      }} />
+      {edge && (
+        <svg width={fw} height={fh} viewBox={`0 0 ${fw} ${fh}`} style={{ position: "absolute", inset: 0 }}>
+          <polygon points={`${fw * 0.22},0 ${fw},${fh * 0.2} ${fw * 0.78},${fh} 0,${fh * 0.82}`}
+            fill="none" stroke={edge} strokeWidth={2}
+            style={{ filter: `drop-shadow(0 0 9px ${edge})` }} />
+        </svg>
+      )}
+    </div>
+  );
+};
 
 /* ============================================================
    13 LIGHT BLOOM
