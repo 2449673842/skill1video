@@ -103,13 +103,18 @@ export const V3Scene2:React.FC=()=>{
   const title=intro(f,30,24);
   const distractors=["消息","广告","疼痛","音乐","价格","气味","人脸","声音","风险","机会","通知","回忆"];
   const gateEvents=gates.map(g=>g.cross);
+  const gateFocus=gateEvents.reduce((m,e)=>Math.max(m,1-clamp(Math.abs(f-e)/28)),0);
+  const camTrack=phase(f,22,224);
+  const camX=clamp((960-x)*.18,-125,125)*camTrack;
+  const camY=clamp((535-y)*.16,-48,48)*camTrack;
+  const camZoom=1+camTrack*.018+gateFocus*.045;
 
   return <Stage bokeh={false}>
     <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 62% 49%,rgba(40,31,18,.34),transparent 34%),radial-gradient(circle at 34% 42%,#102027 0%,#070B0E 42%,#020304 100%)"}}/>
     <Kicker>FILTERS / LAYERED PRIORITY</Kicker>
-    <div style={{position:"absolute",inset:-14,
-      transform:"translateX("+entryPan+"px) scale("+entryScale+")",
-      transformOrigin:"63% 51%",filter:"blur("+entryBlur+"px)"}}>
+    <div style={{position:"absolute",inset:-24,
+      transform:"translate("+(entryPan+camX)+"px,"+camY+"px) scale("+(entryScale*camZoom)+")",
+      transformOrigin:x+"px "+y+"px",filter:"blur("+entryBlur+"px)"}}>
     <MicroShake f={f} events={gateEvents} strength={8}>
       <div style={{position:"absolute",left:1210,top:552,width:290,height:290,transform:"translate(-50%,-50%) scale("+(1+inherited*.24)+")",borderRadius:"50%",
         border:"12px solid rgba(242,184,94,"+(.72*inherited)+")",opacity:inherited,
@@ -186,11 +191,20 @@ export const V3Scene3:React.FC=()=>{
   const revealOsc=rd>=0&&rd<=18?Math.sin((rd+.35)*2.05)*Math.exp(-rd/5.8):0;
   const crowdX=revealOsc*10.5;
   const crowdY=(rd>=0&&rd<=18?Math.cos((rd+.5)*1.72)*Math.exp(-rd/6.2):0)*4.4;
+  const focusHandoff=phase(f,142,184);
+  const focusX=lerp(tx,360,focusHandoff);
+  const focusY=lerp(ty,555,focusHandoff);
+  const camX=clamp((960-focusX)*.16,-105,105);
+  const camY=clamp((540-focusY)*.12,-52,52);
+  const camZoom=1.015+phase(f,18,120)*.018+focusHandoff*.065+revealPeak*.025;
 
   return <Stage warm bokeh={false}>
     <div style={{position:"absolute",inset:-12,background:"radial-gradient(circle at 55% 52%,rgba(30,39,37,.42),transparent 36%),linear-gradient(180deg,#090D0F,#030405)",
       transform:"translate("+(-crowdX*.16)+"px,"+(-crowdY*.12)+"px) scale("+(1+revealPeak*.002)+")"}}/>
     <Kicker>INATTENTIONAL BLINDNESS / PARTICIPATE</Kicker>
+    <div style={{position:"absolute",inset:-28,
+      transform:"translate("+camX+"px,"+camY+"px) scale("+camZoom+")",
+      transformOrigin:focusX+"px "+focusY+"px"}}>
     <GridFloor opacity={.18} horizon={400}/>
     <div style={{position:"absolute",inset:0,transform:"translate("+crowdX+"px,"+crowdY+"px) scale("+(1+revealPeak*.0045)+")",transformOrigin:"40% 52%"}}>
       {crowd.map((_,i)=>{
@@ -215,6 +229,7 @@ export const V3Scene3:React.FC=()=>{
     </div>
     <div style={{position:"absolute",inset:0,pointerEvents:"none",opacity:revealPeak*.86,mixBlendMode:"screen",
       background:"radial-gradient(circle at 19% 51%,rgba(255,231,219,.22) 0 2%,rgba(216,88,73,.14) 9%,transparent 24%)"}}/>
+    </div>
     <div style={{position:"absolute",left:92,top:100,width:760,opacity:entry}}>
       <div style={{fontSize:50,fontWeight:900}}>只盯住<span style={{color:GOLD2}}>金色的人</span>。</div>
       <div style={{fontSize:28,color:"rgba(239,229,204,.48)",marginTop:12}}>数一数，他一共完成了几次明显移动。</div>
@@ -270,10 +285,17 @@ export const V3Scene4:React.FC=()=>{
   const lockPulse=lockFrame.reduce((m,e)=>{const d=f-e;return d>=0&&d<22?Math.max(m,1-d/22):m;},0);
   const coneAngle=Math.atan2(y-emitterY,x-emitterX)*180/Math.PI;
   const dist=Math.sqrt((x-emitterX)*(x-emitterX)+(y-emitterY)*(y-emitterY));
+  const camTrack=phase(f,10,230);
+  const camX=clamp((960-x)*.14,-112,112)*camTrack;
+  const camY=clamp((540-y)*.12,-58,58)*camTrack;
+  const camZoom=1+camTrack*.022+lockPulse*.038;
 
   return <Stage bokeh={false}>
     <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 50% 52%,rgba(40,32,18,.38),transparent 30%),#040608"}}/>
     <Kicker>PRIORITY MAP / SEARCHLIGHT</Kicker>
+    <div style={{position:"absolute",inset:-30,
+      transform:"translate("+camX+"px,"+camY+"px) scale("+camZoom+")",
+      transformOrigin:x+"px "+y+"px"}}>
     <div style={{position:"absolute",inset:0,opacity:entry}}>
     {nodes.map((n,i)=>{
       const a=i===idx?1:Math.max(0,.25-Math.abs(i-idx)*.05);
@@ -286,6 +308,7 @@ export const V3Scene4:React.FC=()=>{
       clipPath:"polygon(0 44%,100% 0,100% 100%,0 56%)",background:"linear-gradient(90deg,rgba(242,184,94,.20),rgba(242,184,94,.035))",opacity:.52}}/>
     <Reticle x={x} y={y} r={88+lockPulse*18} accent={nodes[idx].accent}/>
     <Ripple f={f} events={lockFrame} x={e=>nodes[Math.min(nodes.length-1,Math.floor(e/cycle))].x} y={e=>nodes[Math.min(nodes.length-1,Math.floor(e/cycle))].y} color={nodes[idx].accent} maxR={170} layers={3} duration={26}/>
+    </div>
     <div style={{position:"absolute",left:95,top:105,width:760,opacity:intro(f,22,22)}}>
       <div style={{fontSize:54,fontWeight:900,lineHeight:1.1}}>你在寻找什么，</div>
       <div style={{fontSize:54,fontWeight:900,lineHeight:1.1,color:GOLD2,marginTop:6}}>什么就更容易跳出来。</div>
