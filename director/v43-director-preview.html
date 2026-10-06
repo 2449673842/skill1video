@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Attention V4.3 Director Preview</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",sans-serif;background:#050709;color:#efe5cc}
+*{box-sizing:border-box} body{margin:0;background:#050709}
+.shell{max-width:1500px;margin:auto;padding:18px}
+.head{display:flex;gap:18px;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+h1{font-size:20px;margin:0 0 6px}.sub{font-size:13px;color:#9c978c;line-height:1.5;max-width:880px}
+.badge{border:1px solid #3b3528;border-radius:999px;padding:7px 11px;color:#d9b26f;font-size:12px;white-space:nowrap}
+.stage-wrap{position:relative;aspect-ratio:16/9;background:#020304;border:1px solid #24272a;border-radius:12px;overflow:hidden;box-shadow:0 24px 80px #0009}
+canvas{width:100%;height:100%;display:block}
+.note{position:absolute;left:14px;bottom:14px;padding:9px 11px;border-radius:8px;background:#050709cc;border:1px solid #313438;color:#c6c1b5;font-size:12px;max-width:56%}
+.controls{display:grid;grid-template-columns:auto auto 1fr auto;gap:10px;align-items:center;margin-top:12px}
+button,select{background:#111519;color:#efe5cc;border:1px solid #30353a;border-radius:8px;padding:8px 11px}
+button:hover{border-color:#d9b26f} input[type=range]{width:100%}
+.time{font-variant-numeric:tabular-nums;font-size:13px;color:#d6d0c3}
+.timeline{position:relative;height:50px;margin-top:10px;border:1px solid #252a2e;border-radius:8px;background:#0a0d10;overflow:hidden}
+.seg{position:absolute;top:0;bottom:0;border-right:1px solid #242a2f;font-size:10px;color:#767b7c;padding:5px 4px}
+.quiet{position:absolute;bottom:0;height:7px;background:#66b9aa99}
+.event{position:absolute;top:0;bottom:0;width:1px;background:#d9b26f99}.event::before{content:"";position:absolute;top:5px;left:-3px;width:7px;height:7px;border-radius:50%;background:#f0d79a}
+.jumps{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.jumps button{font-size:11px;padding:6px 8px}
+.audit{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.audit div{border:1px solid #242a2e;border-radius:8px;padding:9px 10px;background:#090c0f}
+.audit b{display:block;font-size:11px;color:#d9b26f;margin-bottom:5px}.audit span{font-size:11px;color:#979b99;line-height:1.4}
+@media(max-width:900px){.audit{grid-template-columns:1fr 1fr}.controls{grid-template-columns:auto auto 1fr}.time{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="head">
+    <div>
+      <h1>Attention V4.3 · Director Preview</h1>
+      <div class="sub">这不是成片。它是用于审查“动—停—看懂—再动”、对象继承、镜头理由和安静区的动态设计稿。没有叙事理由时默认静止；没有对象继承关系时允许干净切。</div>
+    </div>
+    <div class="badge">55 HARD RULES / PREVIEW</div>
+  </div>
+  <div class="stage-wrap">
+    <canvas id="c" width="1920" height="1080"></canvas>
+    <div class="note" id="note"></div>
+  </div>
+  <div class="controls">
+    <button id="play">▶ 播放</button>
+    <select id="speed"><option>0.5</option><option selected>1</option><option>1.5</option><option>2</option></select>
+    <input id="scrub" type="range" min="0" max="120" step="0.01" value="0"/>
+    <div class="time" id="time">00:00.00 / 02:00.00</div>
+  </div>
+  <div class="timeline" id="timeline"></div>
+  <div class="jumps" id="jumps"></div>
+  <div class="audit">
+    <div><b>静止</b><span>阅读期允许真正静止，不加呼吸 zoom / shake。</span></div>
+    <div><b>对象继承</b><span>卡片→人物焦点→搜索对象→工作卡→工作区→网络→轨道→分叉→矩阵单元→纸页→时间块→枝干。</span></div>
+    <div><b>镜头</b><span>大部分段落锁镜头；只有网络建立段一次轻微揭示。</span></div>
+    <div><b>边界</b><span>不使用固定 8 秒，不使用统一 overlay morph，不使用统一 whoosh。</span></div>
+  </div>
+</div>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+const play=document.getElementById('play'),scrub=document.getElementById('scrub'),speed=document.getElementById('speed');
+const timeEl=document.getElementById('time'),note=document.getElementById('note'),timeline=document.getElementById('timeline'),jumps=document.getElementById('jumps');
+let t=0,running=false,last=performance.now();
+const D=120,W=1920,H=1080;
+const G='#d9b26f',G2='#f0d79a',C='#efe5cc',T='#66b9aa',CY='#5bc4d4',R='#d85849',O='#f28a52';
+const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+const sm=x=>{x=clamp(x);return x*x*(3-2*x)};
+const s5=x=>{x=clamp(x);return x*x*x*(x*(x*6-15)+10)};
+const ph=(x,a,b)=>s5((x-a)/(b-a));
+const mix=(a,b,q)=>a+(b-a)*q;
+const fader=(x,a,b,fi=.5,fo=.5)=>Math.min(ph(x,a,a+fi),1-ph(x,b-fo,b));
+const beats=[
+ [0,8.8,'输入'],[8.3,20.3,'筛选'],[19.7,31.5,'注意盲视'],[31.5,42.25,'搜索灯'],
+ [41.8,53.6,'竞争'],[53.2,66.3,'工作区'],[65.6,78.8,'连接'],[78.3,90.2,'轨道'],
+ [89.8,100.7,'分叉'],[100.3,109.1,'劫持矩阵'],[108.8,116.1,'规则/时间'],[115.8,120,'生长/结尾']
+];
+const quiet=[[5.8,7.4],[17.6,19.2],[28.3,31.2],[39.9,41.5],[50.8,53.2],[63.2,65.7],[76.2,78.2],[88,91],[98.7,100.4],[107,108.8],[113.6,116],[118.7,120]];
+const events=[
+ [8.45,'筛选开始'],[19.9,'卡片→人物'],[27.15,'红人揭示'],[42.05,'搜索→工作卡'],[53.85,'工作卡→工作区'],
+ [66.05,'工作区→网络'],[78.55,'网络→轨道'],[92.05,'轨道→分叉'],[100.75,'分叉→矩阵单元'],
+ [109.1,'矩阵单元→纸页'],[116.15,'时间块→枝干'],[118.4,'终章']
+];
+beats.forEach(b=>{const d=document.createElement('div');d.className='seg';d.style.left=(b[0]/D*100)+'%';d.style.width=((b[1]-b[0])/D*100)+'%';d.textContent=b[2];timeline.appendChild(d)});
+quiet.forEach(q=>{const d=document.createElement('div');d.className='quiet';d.style.left=(q[0]/D*100)+'%';d.style.width=((q[1]-q[0])/D*100)+'%';timeline.appendChild(d)});
+events.forEach(e=>{const d=document.createElement('div');d.className='event';d.style.left=(e[0]/D*100)+'%';d.title=e[1];timeline.appendChild(d);
+ const b=document.createElement('button');b.textContent=e[0].toFixed(1)+'s '+e[1];b.onclick=()=>{t=e[0];scrub.value=t;draw()};jumps.appendChild(b)});
+function bg(warm=false,paper=false){
+ ctx.fillStyle=paper?'#efe2c8':warm?'#090706':'#05080a';ctx.fillRect(0,0,W,H);
+ const g=ctx.createRadialGradient(1000,450,30,1000,450,900);
+ if(paper){g.addColorStop(0,'#fff7e6');g.addColorStop(1,'#d7c4a0')}else if(warm){g.addColorStop(0,'#1c130c');g.addColorStop(1,'#020304')}else{g.addColorStop(0,'#101a1d');g.addColorStop(1,'#020304')}
+ ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+}
+function txt(s,x,y,size=42,col=C,align='left',weight=800,alpha=1){ctx.save();ctx.globalAlpha=alpha;ctx.font=weight+' '+size+'px "Microsoft YaHei",sans-serif';ctx.fillStyle=col;ctx.textAlign=align;ctx.fillText(s,x,y);ctx.restore()}
+function line(x1,y1,x2,y2,col=G,w=3,a=1){ctx.save();ctx.globalAlpha=a;ctx.strokeStyle=col;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore()}
+function roundRect(x,y,w,h,r,fill,stroke=null,a=1){ctx.save();ctx.globalAlpha=a;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke()}ctx.restore()}
+function header(k,title,body,col=G2,paper=false,a=1){txt(k,74,70,18,paper?'#776b59':G, 'left',700,a);txt(title,92,165,54,paper?'#151411':C,'left',900,a);line(92,190,180,190,col,5,a);if(body)txt(body,92,235,23,paper?'#574f43':'#aaa49a','left',500,a)}
+function caption(s,paper=false,a=1){txt(s,960,998,31,paper?'#29251f':'#d8d0bf','center',600,a)}
+function cards(a,dim=0){const data=[[250,330,'通知'],[520,280,'价格'],[820,350,'人脸'],[1220,300,'音乐'],[1540,390,'风险'],[320,700,'消息'],[650,760,'广告'],[1110,720,'气味'],[1480,690,'机会'],[1650,570,'疼痛']];
+ data.forEach((d,i)=>{roundRect(d[0]-90,d[1]-43,180,86,13,'#0d1114','#353a3d',a*(.62-dim*.46));txt(d[2],d[0]-66,d[1],24,'#d5d0c7','left',700,a*(.62-dim*.46))})}
+function carrierCard(x,y,q=0){const w=mix(310,70,q),h=mix(170,70,q);roundRect(x-w/2,y-h/2,w,h,mix(18,35,q),'#121719',G2,1);if(q<.8){txt('真正进入你此刻的那一个',x,y-18,30,G2,'center',900,1-q);txt('优先级更高',x,y+26,19,'#aaa49a','center',500,1-q)}}
+function crowd(a,reveal=0,rx=1760){for(let r=0;r<6;r++)for(let c0=0;c0<12;c0++){const x=250+c0*125+(r%2)*32,y=390+r*88;if(Math.abs(x-1040)<70&&Math.abs(y-570)<70)continue;ctx.globalAlpha=a*(.95-reveal*.45);ctx.fillStyle='#d8d0bf';ctx.beginPath();ctx.arc(x,y,12,0,Math.PI*2);ctx.fill();roundRect(x-8,y+12,16,30,6,'#d8d0bf',null,a*(.95-reveal*.45))}
+ ctx.globalAlpha=1;ctx.fillStyle=R;ctx.beginPath();ctx.arc(rx,585,13,0,Math.PI*2);ctx.fill();roundRect(rx-9,598,18,34,7,R,null,a)}
+function scene(){
+ const q=t;
+ if(q<8.8){const a=fader(q,0,8.8,.55,.7);bg();cards(a,ph(q,6.7,8.5));header('ATTENTION / INPUT','世界一直在说话。','很多东西同时抵达，但不会同时进入意识。',G2,false,a);caption('注意力的第一步，不是理解，而是选择。',false,ph(q,3.8,4.8)*a)}
+ else if(q<20.3){const a=fader(q,8.3,20.3,.65,.65);bg();header('FILTERS / PRIORITY','信息要穿过一层层优先级。','目标、显著性与经验决定通行权。',CY,false,a);const gs=[640,880,1140,1400];gs.forEach((x,i)=>{roundRect(x-95,350,190,430,18,'#071015',CY,a*.9);txt(['感官','目标','显著性','经验'][i],x,720,29,C,'center',800,a)});caption('很多信号没有赢得继续处理的机会。',false,ph(q,12.2,13.2)*a)}
+ else if(q<31.5){const a=fader(q,19.7,31.5,.55,.12);bg();header('INATTENTIONAL BLINDNESS','专注，也会制造盲区。','任务占满资源时，显眼变化也可能没进入“此刻”。',R,false,a);const rx=mix(1760,360,ph(q,22.5,26.7));const rev=ph(q,26.9,27.6);crowd(a,rev,rx);if(rev>.02)txt('刚才的红色人影，你看见了吗？',520,560,48,R,'left',900,rev*a);caption('真正的“看见”，是被注意系统允许进入工作区。',false,ph(q,27.3,28)*a)}
+ else if(q<42.25){const a=fader(q,31.5,42.25,.28,.45);bg(true);header('SEARCHLIGHT / CURRENT GOAL','你在寻找什么，什么就更容易跳出来。','注意改变的是重要性地图，不是世界本身。',G2,false,a);const ns=[[500,420,'朋友',CY],[760,690,'通知',O],[1040,360,'危险',R],[1320,430,'工作',G2],[1470,720,'价格',T]];let idx=q<34?0:q<36.6?1:q<39.1?2:3;ns.forEach((n,i)=>{roundRect(n[0]-110,n[1]-54,220,108,16,'#0c1012',i===idx?n[3]:'#34383b',a);txt(n[2],n[0],n[1]+8,28,i===idx?n[3]:C,'center',800,a)});const n=ns[idx];line(960,570,n[0],n[1],G2,4,a);caption('焦点改变以后，同一个环境会呈现不同的“重要性地图”。',false,ph(q,35.2,36)*a)}
+ else if(q<53.6){const a=fader(q,41.8,53.6,.45,.35);bg(true);header('SELECTION / COMPETITION','被注意，也像一场竞价。','越贴近当前目标、越新奇或越有威胁，越容易获得下一秒资源。',O,false,a);caption('赢家不是永远最重要，而是此刻最容易占据工作区。',false,ph(q,46.2,47)*a)}
+ else if(q<66.3){const a=fader(q,53.2,66.3,.45,.45);bg();header('WORKSPACE / BOTTLENECK','问题不是没有信息，而是工作区太窄。','多个任务同时存在，但能被操作的内容必须排队。',CY,false,a);caption('注意力决定谁先进入；工作记忆决定一次能处理多少。',false,ph(q,58.8,59.6)*a)}
+ else if(q<78.8){const a=fader(q,65.6,78.8,.5,.45);bg();header('WORKING MEMORY / LINKING','理解，是把被选中的信息连起来。','片段与目标、记忆和关系相连后，才形成可操作的结构。',T,false,a);caption('注意力负责选，工作记忆负责连。',false,ph(q,69.4,70.2)*a)}
+ else if(q<90.2){const a=fader(q,78.3,90.2,.4,.35);bg(true);header('REPETITION / GROOVE','重复的注意，会压出一条轨道。','同一路径反复被激活，下一次就更容易沿旧路走。',G2,false,a);caption('一次选择很轻；重复选择以后，路径越来越省力。',false,ph(q,83,83.8)*a)}
+ else if(q<100.7){const a=fader(q,89.8,100.7,.28,.3);bg();header('CHOICE / LIFE FORK','先停在分叉口，再决定往哪走。','重要节点不需要更快，反而需要安静看见其他可能性。',G2,false,a);caption('注意力也在慢慢决定你更常走向哪一种生活。',false,ph(q,93.8,94.6)*a)}
+ else if(q<109.1){const a=fader(q,100.3,109.1,.35,.35);bg();header('HIJACK / COMPETING SYSTEMS','你的注意，也会被外部系统重新排序。','看见机制，才有机会重新设定规则。',R,false,a);const ap=ph(q,100.8,102.7);for(let i=0;i<60;i++){const rr=Math.floor(i/10),cc=i%10,hot=i===48||(i>=45&&i<=49&&q>103.5);roundRect(500+cc*105,390+rr*62,92,48,4,hot?R:'#20262a','#363c40',ap*(hot?1:.8))}caption('外部系统反复强化同一个格子，会让它像“自己的偏好”。',false,ph(q,103.8,104.7)*a)}
+ else if(q<116.1){const a=fader(q,108.8,116.1,.35,.2);bg(false,true);header('RULES / DAY BLOCKS','真正的反制，是改写分配规则。','让重要事情先占位，低价值刺激失去默认入口。','#9a6737',true,a);caption('一天的时间块不主动安排，就很容易被别人安排。',true,ph(q,112.1,112.9)*a)}
+ else {const a=fader(q,115.8,120,.2,.02);bg(true);txt('你反复注意什么，',960,350,68,C,'center',900,ph(q,118.25,118.8)*a);txt('你就更容易成为什么。',960,435,68,G2,'center',900,ph(q,118.25,118.8)*a);txt('注意力不是一个开关，而是一条被一次次选择出来的路。',960,500,23,'#aaa49a','center',500,ph(q,118.25,118.8)*a)}
+ // Cross-scene carriers rendered on top, so identity does not reset.
+ if(q>=4&&q<20){let x=q<8.5?1040:(q<10.5?mix(540,640,ph(q,8.5,10.5)):q<12.7?mix(640,880,ph(q,10.5,12.7)):q<14.9?mix(880,1140,ph(q,12.7,14.9)):q<17.2?mix(1140,1400,ph(q,14.9,17.2)):mix(1400,1000,ph(q,17.2,20)));let y=560;carrierCard(x,y,ph(q,18.5,20))}
+ if(q>=20&&q<31.5){const ts=[20,22.4,24.1,25.9,27.5,28.4,31.5],xs=[1000,820,1120,910,1040,1040,1040],ys=[560,470,650,480,570,570,570];let i=0;while(i<ts.length-1&&q>ts[i+1])i++;let u=ph(q,ts[i],ts[i+1]);let x=mix(xs[i],xs[i+1],u),y=mix(ys[i],ys[i+1],u);ctx.fillStyle=G2;ctx.beginPath();ctx.arc(x,y,14,0,Math.PI*2);ctx.fill()}
+ if(q>=38.7&&q<66){const qa=ph(q,41.8,44.2),qw=ph(q,53.5,56.6),x=mix(1320,960,qa),y=mix(430,560,qa),w=mix(mix(220,430,qa),820,qw),h=mix(mix(108,235,qa),440,qw);roundRect(x-w/2,y-h/2,w,h,20,'#101416',G2,1);if(qw<.6)txt(q<42.2?'工作':'当前目标',x,y,34,G2,'center',900,1-qw)}
+ if(q>=64.8&&q<100.6){const ap=ph(q,64.8,67),sim=ph(q,75.2,78.6),tr=ph(q,75.8,78.6);const pts=[[650,460],[850,400],[1050,430],[1280,500],[780,650],[1030,640],[1230,720]];if(ap*(1-sim*.88)>.02){pts.forEach(p=>{ctx.fillStyle=T;ctx.beginPath();ctx.arc(p[0],p[1],6,0,Math.PI*2);ctx.fill()});[[0,1],[1,2],[2,3],[0,4],[1,4],[2,5],[3,6],[4,5],[5,6]].forEach(e=>line(pts[e[0]][0],pts[e[0]][1],pts[e[1]][0],pts[e[1]][1],CY,2,ap*(1-sim*.88)))}if(tr>.02){ctx.save();ctx.globalAlpha=tr;ctx.strokeStyle=G2;ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(260,720);ctx.bezierCurveTo(520,430,760,720,1010,560);ctx.stroke();ctx.restore()}const fork=ph(q,91,93.4);if(fork>.02){line(1010,560,1600,300,G2,7,fork);line(1010,560,1650,830,C,7,fork*.2);line(1010,560,1640,560,CY,7,fork*.18)}}
+ if(q>=99&&q<116.2){const cell=ph(q,100.4,102.4),paper=ph(q,108.7,110.7),x=mix(mix(1600,1270,cell),960,paper),y=mix(mix(300,690,cell),560,paper),w=mix(mix(30,56,cell),1120,paper),h=mix(mix(30,44,cell),650,paper);roundRect(x-w/2,y-h/2,w,h,mix(15,4,Math.max(cell,paper)),paper>.5?'#f3e9d1':R,paper>.5?'#705634':'#fff4',1)}
+ if(q>=114.5){const gr=ph(q,116,118.25);for(let i=0;i<4;i++){const sx=960+(i-1.5)*56,sy=585+(i%2)*22,ex=960+(i-1.5)*78,ey=360+Math.abs(i-1.5)*38;line(sx,sy,mix(sx,ex,gr),mix(sy,ey,gr),i===1||i===2?G2:T,5,gr)}}
+}
+function directorNote(){
+ const q=t;let s='默认静止：当前镜头不运镜，只让叙事对象发生变化。';
+ if(q<8.8)s='输入段：卡片进入后进入稳定阅读，不做持续呼吸。';
+ else if(q<20.3)s='筛选段：同一张卡穿过真实门结构，保持对象身份。';
+ else if(q<31.5)s='注意盲视：红人穿过，28.4s 后锁镜头静止，让结果落地。';
+ else if(q<42.25)s='搜索灯：只移动焦点关系；39.9s 后停住，不继续漂移。';
+ else if(q<53.6)s='竞争段：其他卡退让，工作卡留下；动作完成后有 settle。';
+ else if(q<66.3)s='工作区：卡本身展开成工作窗口，不使用 transition overlay。';
+ else if(q<78.8)s='连接段：网络从工作区关系长出；只有一次轻微揭示。';
+ else if(q<90.2)s='轨道段：网络简化成路径；重复由球沿同一路径证明。';
+ else if(q<100.7)s='分叉段：先停 1s，再显露分支，选择后再移动。';
+ else if(q<109.1)s='矩阵段：选择路径的终点变成同一个红色矩阵单元。';
+ else if(q<116.1)s='纸页段：矩阵单元直接拉宽变纸；时间块从纸内对齐。';
+ else s='结尾：时间块长成枝干后静止，标题最后出现。';
+ note.textContent=s;
+}
+function draw(){scene();directorNote();scrub.value=t;timeEl.textContent=fmt(t)+' / 02:00.00'}
+function fmt(v){const m=Math.floor(v/60),s=v-m*60;return String(m).padStart(2,'0')+':'+s.toFixed(2).padStart(5,'0')}
+function tick(now){if(running){t+=((now-last)/1000)*parseFloat(speed.value);if(t>=D){t=D;running=false;play.textContent='▶ 播放'}draw()}last=now;requestAnimationFrame(tick)}
+play.onclick=()=>{running=!running;play.textContent=running?'❚❚ 暂停':'▶ 播放'};
+scrub.oninput=()=>{t=parseFloat(scrub.value);draw()};
+requestAnimationFrame(tick);draw();
+</script>
+</body>
+</html>
