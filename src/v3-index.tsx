@@ -262,7 +262,7 @@ const TrackToFork:React.FC<{q:number;arc:number}>=({q,arc})=>{
     <svg width={W} height={H} style={{position:"absolute",inset:0}}>
       <path d="M 250 790 C 600 720, 800 650, 930 610" fill="none" stroke="rgba(239,229,204,.28)" strokeWidth={6}/>
       <path d="M 930 610 C 1170 540, 1370 380, 1730 300" fill="none" stroke={GOLD2} strokeOpacity={t} strokeWidth={7+2*t} strokeLinecap="round"/>
-      <path d="M 930 610 C 1180 700, 1380 830, 1740 860" fill="none" stroke="rgba(239,229,204,"+(.24*t)+")" strokeWidth={7+2*t} strokeLinecap="round"/>
+      <path d="M 930 610 C 1180 700, 1380 830, 1740 860" fill="none" stroke={"rgba(239,229,204,"+(.24*t)+")"} strokeWidth={7+2*t} strokeLinecap="round"/>
       <path d="M 300 760 C 620 470, 980 860, 1650 500" fill="none" stroke={"rgba(242,184,94,"+(.72*(1-t))+")"} strokeWidth={8-2*t} strokeLinecap="round"/>
     </svg>
   </div>;
