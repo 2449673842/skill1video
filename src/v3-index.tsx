@@ -12,65 +12,52 @@ const mix=(a:number,b:number,t:number)=>a+(b-a)*t;
 
 type Cam={x:number;y:number;z:number;ox:number;oy:number};
 
+const hold=(f:number,a:number,b:number)=>smoother(clamp((f-a)/(b-a),0,1));
+const smoother=(v:number)=>{const x=clamp(v,0,1);return x*x*x*(x*(x*6-15)+10);};
+
 const legacyCamera=(scene:number,f:number):Cam=>{
-  const p=smooth(f/239);
+  // V4.2 camera grammar: the subject can move while the camera holds.
+  // Reframes only happen when a new spatial fact must be revealed.
   if(scene===5){
-    const i=Math.floor(f/60)%4;
-    const a=-1.35+i*.9+Math.sin(f*.012)*.08;
-    const x=960+Math.cos(a)*365;
-    const y=590+Math.sin(a)*365*.56;
-    return {x:clamp((960-x)*.13,-72,72),y:clamp((540-y)*.11,-45,45),z:1.022+.012*Math.sin(Math.PI*((f%60)/60)),ox:x,oy:y};
+    const reveal=hold(f,118,150);
+    return {x:mix(0,-34,reveal),y:mix(0,10,reveal),z:1+reveal*.018,ox:960,oy:585};
   }
   if(scene===6){
-    const i=Math.floor(f/44)%4;
-    const x=600+i*260, y=560+i*26;
-    return {x:clamp((960-x)*.15,-70,70),y:clamp((540-y)*.10,-34,34),z:1.025+.012*smooth((f%44)/30),ox:x,oy:y};
+    const reframe=hold(f,124,156);
+    return {x:mix(0,28,reframe),y:mix(0,-8,reframe),z:1+reframe*.018,ox:960,oy:570};
   }
   if(scene===7){
-    const q=smooth(clamp((f-18)/190,0,1));
-    const y=720-145*q;
-    return {x:0,y:clamp((540-y)*.11,-28,28),z:1.018+.045*q,ox:960,oy:y};
+    const push=hold(f,78,138);
+    return {x:0,y:mix(0,-18,push),z:1+push*.045,ox:960,oy:650};
   }
   if(scene===8){
-    const a=-.55+p*1.15;
-    const x=960+Math.cos(a)*145, y=590+Math.sin(a)*86;
-    return {x:(960-x)*.09,y:(540-y)*.08,z:1.018+.028*p,ox:x,oy:y};
+    const reveal=hold(f,104,150);
+    return {x:mix(0,-22,reveal),y:mix(0,8,reveal),z:1+reveal*.024,ox:960,oy:590};
   }
   if(scene===9){
-    const q=(f%52)/52;
-    const x=320+(1640-320)*q;
-    const y=760-210*Math.sin(q*Math.PI);
-    return {x:clamp((960-x)*.10,-74,74),y:clamp((540-y)*.09,-38,38),z:1.025+.018*Math.sin(Math.PI*q),ox:x,oy:y};
+    // The ball carries the motion; camera stays still until the groove is legible.
+    const reveal=hold(f,152,186);
+    return {x:mix(0,-26,reveal),y:mix(0,-10,reveal),z:1+reveal*.020,ox:960,oy:630};
   }
   if(scene===10){
-    const q=smooth(clamp((f-28)/175,0,1));
-    const x=930+(1450-930)*q, y=610+(350-610)*q;
-    return {x:clamp((960-x)*.12,-68,68),y:clamp((540-y)*.10,-34,34),z:1.02+.035*q,ox:x,oy:y};
+    const fork=hold(f,68,112),branch=hold(f,152,188);
+    return {x:mix(0,-22,fork)+mix(0,-22,branch),y:mix(0,8,fork)+mix(0,-10,branch),z:1+fork*.020+branch*.022,ox:1120,oy:540};
   }
   if(scene===11){
-    const q=smooth(clamp((f-118)/105,0,1));
-    const x=1040+220*q, y=610+105*q;
-    return {x:clamp((960-x)*.08,-42,42),y:clamp((540-y)*.07,-28,28),z:1.012+.018*q,ox:x,oy:y};
+    const zoom=hold(f,126,214);
+    return {x:mix(0,-34,zoom),y:mix(0,-18,zoom),z:1+zoom*.050,ox:1265,oy:750};
   }
   if(scene===12){
-    const i=f<92?0:f<142?1:2;
-    const tx=[420,950,1480][i], ty=[575,593,611][i];
-    const q=smooth(clamp(((f%50)-4)/30,0,1));
-    const prev=[420,420,950][i];
-    const x=prev+(tx-prev)*q;
-    return {x:clamp((960-x)*.10,-58,58),y:clamp((540-ty)*.07,-18,18),z:1.015+.025*q,ox:x,oy:ty};
+    const open=hold(f,22,82),rules=hold(f,116,150);
+    return {x:mix(0,14,open)+mix(0,-24,rules),y:mix(0,-4,open)+mix(0,8,rules),z:1+open*.012+rules*.018,ox:960,oy:535};
   }
   if(scene===13){
-    const x=960+Math.sin(f*.018)*90;
-    const y=500+150*p;
-    return {x:(960-x)*.07,y:clamp((540-y)*.08,-26,26),z:1.018+.022*p,ox:x,oy:y};
+    const fracture=hold(f,62,164);
+    return {x:mix(0,-20,fracture),y:mix(0,-10,fracture),z:1+fracture*.024,ox:960,oy:540};
   }
-  const grow=smooth(clamp((f-25)/155,0,1));
-  const release=smooth(clamp((f-190)/46,0,1));
-  const z=1.018+.045*grow-.038*release;
-  return {x:0,y:16*grow-12*release,z,ox:960,oy:585};
+  const grow=hold(f,36,156),release=hold(f,196,232);
+  return {x:0,y:mix(0,12,grow)-mix(0,10,release),z:1+grow*.038-release*.030,ox:960,oy:585};
 };
-
 const DirectedLegacyScene:React.FC<{scene:number;children:React.ReactNode}>=({scene,children})=>{
   const f=useCurrentFrame();
   const c=legacyCamera(scene,f);
@@ -390,7 +377,6 @@ const Film:React.FC=()=>{
     {scenes.map((Scene,i)=><Sequence key={i} from={starts[i]*FPS} durationInFrames={frames[i]}>
       {i<5?<Scene/>:<DirectedLegacyScene scene={i}><Scene/></DirectedLegacyScene>}
     </Sequence>)}
-    <CarrierContinuity/>
     <WorldProgress/>
   </AbsoluteFill>;
 };
