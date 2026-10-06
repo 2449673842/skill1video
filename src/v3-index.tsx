@@ -244,7 +244,7 @@ const NetworkToTrack:React.FC<{q:number;arc:number}>=({q,arc})=>{
     <Veil arc={arc} x={960} y={590} warm/>
     <svg width={W} height={H} style={{position:"absolute",inset:0}}>
       {pts.slice(1).map((p,i)=><line key={"l"+i} x1={pts[Math.floor(i/2)][0]} y1={pts[Math.floor(i/2)][1]} x2={p[0]} y2={p[1]}
-        stroke="rgba(91,196,212,"+((1-t)*.42)+")" strokeWidth="1.5"/>)}
+        stroke={"rgba(91,196,212,"+((1-t)*.42)+")"} strokeWidth="1.5"/>)}
       {pts.map((p,i)=>{
         const tt=smooth(clamp((t-i*.035)/.72,0,1));
         const tx=mix(p[0],320+i*145,tt),ty=mix(p[1],760-180*Math.sin((i/8)*Math.PI),tt);
