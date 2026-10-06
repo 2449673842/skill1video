@@ -32,6 +32,24 @@ const fmt=(n:number)=>{
   return String(Math.round(n));
 };
 const phase=(f:number,a:number,b:number)=>smooth(clamp((f-a)/(b-a)));
+const logLerp=(a:number,b:number,t:number)=>Math.pow(10,lerp(Math.log10(a),Math.log10(b),smoother(clamp(t))));
+const selectionValue=(f:number)=>{
+  if(f<18)return 1;
+  if(f<68)return logLerp(1,10000,(f-18)/50);
+  if(f<88)return 10000;
+  if(f<142)return logLerp(10000,100,(f-88)/54);
+  if(f<176)return logLerp(100,1,(f-142)/34);
+  return 1;
+};
+const surgeValue=(f:number)=>{
+  const marks=[1,12,537,82000,3200000,1000000000];
+  const points=[10,30,51,73,96,121];
+  if(f<=points[0])return marks[0];
+  for(let i=0;i<marks.length-1;i++){
+    if(f<points[i+1])return logLerp(marks[i],marks[i+1],(f-points[i])/(points[i+1]-points[i]));
+  }
+  return marks[marks.length-1];
+};
 
 const Skyline:React.FC<{accent:string}>=({accent})=><div style={{position:"absolute",inset:0,overflow:"hidden",background:"linear-gradient(180deg,#20323E 0%,#A15A40 55%,#181517 100%)"}}>
   <div style={{position:"absolute",left:0,right:0,bottom:0,height:"58%",background:"linear-gradient(180deg,transparent,rgba(3,6,10,.45))"}}/>
@@ -70,7 +88,7 @@ const MapArt:React.FC<{accent:string}>=({accent})=><svg width="100%" height="100
 </svg>;
 
 const Galaxy:React.FC=()=> <div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse at 52% 48%,#F2B85E 0 3%,#744B96 8%,#143B55 20%,#071017 52%,#020406 100%)",overflow:"hidden"}}>
-  {Array.from({length:28}).map((_,i)=><div key={i} style={{position:"absolute",left:(hash(i,1)*100)+"%",top:(hash(i,2)*100)+"%",width:1+hash(i,3)*2,height:1+hash(i,3)*2,borderRadius:"50%",background:i%5===0?GOLD2:"#D9E6ED",opacity:.5+hash(i,5)*.5}}/>)}
+  {Array.from({length:16}).map((_,i)=><div key={i} style={{position:"absolute",left:(hash(i,1)*100)+"%",top:(hash(i,2)*100)+"%",width:1+hash(i,3)*2,height:1+hash(i,3)*2,borderRadius:"50%",background:i%5===0?GOLD2:"#D9E6ED",opacity:.5+hash(i,5)*.5}}/>)}
 </div>;
 
 const Doc:React.FC=()=> <div style={{position:"absolute",inset:0,background:"linear-gradient(145deg,#E8E0CC,#B5AA94)",color:"#262627",padding:"9px 10px"}}>
@@ -123,42 +141,48 @@ const ThumbArt:React.FC<{kind:MediaKind;accent:string;i:number}>=({kind,accent,i
 const InfoTile:React.FC<{i:number;stream:number;filter:number;portal:number}>=({i,stream,filter,portal})=>{
   const spec=specs[i%specs.length];
   const depth=hash(i,2);
-  const lane=(i%13)-6;
-  const near=depth>.67;
-  const startX=-420-hash(i,3)*850;
-  const endX=1320+lane*42+depth*210;
-  const y0=165+hash(i,4)*760;
-  const y1=535+(hash(i,5)-.5)*430*(1-depth*.55);
-  const q=smoother(clamp((stream-hash(i,6)*.38)/.72));
-  const chosen=i%17===0||i===9||i===28||i===43;
-  const c=smoother(clamp((filter-hash(i,7)*.18)/.82));
-  const orbitA=i*.91+portal*.8;
-  const orbitR=chosen?220+hash(i,8)*160:0;
+  const rank=hash(i,13);
+  const band=i%2===0?-1:1;
+  const lane=(i%9)-4;
+  const near=depth>.80;
+  const startX=-360-hash(i,3)*760;
+  const endX=1230+lane*54+depth*175;
+  const y0=125+hash(i,4)*825;
+  const y1=565+band*(205+hash(i,5)*155);
+  const q=smoother(clamp((stream-hash(i,6)*.28)/.72));
+  const elite=i===9||i===28||i===43||i%19===0;
+  const cutoff=interpolate(filter,[0,.48,1],[-.05,.56,.94],{extrapolateLeft:"clamp",extrapolateRight:"clamp"});
+  const survive=elite?1:smooth(clamp((rank-cutoff+.10)/.18));
+  const cull=1-survive;
+  const c=smoother(clamp((filter-hash(i,7)*.12)/.88));
+  const orbitA=i*.91+portal*.72;
+  const orbitR=elite?205+hash(i,8)*115:0;
   const baseX=lerp(startX,endX,q);
   const baseY=lerp(y0,y1,q);
-  const targetX=chosen?1480+Math.cos(orbitA)*orbitR:1480;
-  const targetY=chosen?565+Math.sin(orbitA)*orbitR*.58:565;
-  const x=lerp(baseX,targetX,c);
-  const y=lerp(baseY,targetY,c);
-  const z=-1180+depth*1120+q*520;
-  const sc=(.50+depth*.88)*(chosen?1:1-c*.62);
-  const alpha=(.16+.84*q)*(chosen?1:1-c*.93);
-  const blur=near&&q<.45?4+(1-q)*9:chosen?0:c*5;
-  const rotY=-22+depth*27+(i%2?8:-8);
-  const rotZ=(hash(i,9)-.5)*9;
-  const w=196+depth*75,h=112+depth*45;
+  const targetX=elite?1490+Math.cos(orbitA)*orbitR:1490;
+  const targetY=elite?565+Math.sin(orbitA)*orbitR*.58:565;
+  const pull=c*(elite?1:.22*cull);
+  const x=lerp(baseX,targetX,pull);
+  const y=lerp(baseY,targetY,pull);
+  const z=-1180+depth*1040+q*420;
+  const sc=(.40+depth*.60)*(elite?1:1-cull*.20);
+  const alpha=(.10+.72*q)*(elite?1:(.16+.84*survive));
+  const blur=near&&q<.48?5+(1-q)*9:elite?0:1.5+cull*5.5;
+  const rotY=-18+depth*22+(i%2?5:-5);
+  const rotZ=(hash(i,9)-.5)*6;
+  const w=158+depth*52,h=90+depth*30;
   return <div style={{
     position:"absolute",left:x,top:y,width:w,height:h,opacity:alpha,
     transform:"translate(-50%,-50%) translateZ("+z+"px) rotateY("+rotY+"deg) rotateZ("+rotZ+"deg) scale("+sc+")",
     transformStyle:"preserve-3d",filter:"blur("+blur+"px)",
-    border:"1px solid "+spec.accent+(chosen?"CC":"55"),borderRadius:12,
+    border:"1px solid "+spec.accent+(elite?"A8":"38"),borderRadius:10,
     background:"#081015",overflow:"hidden",
-    boxShadow:chosen?"0 0 28px "+spec.accent+"55,0 28px 70px rgba(0,0,0,.42)":"0 24px 55px rgba(0,0,0,.32)"
+    boxShadow:elite?"0 0 24px "+spec.accent+"38,0 24px 60px rgba(0,0,0,.38)":"0 18px 45px rgba(0,0,0,.26)"
   }}>
     <div style={{position:"absolute",left:0,right:0,top:0,height:"72%"}}><ThumbArt kind={spec.kind} accent={spec.accent} i={i}/></div>
-    <div style={{position:"absolute",left:0,right:0,bottom:0,height:"31%",background:"linear-gradient(180deg,rgba(5,8,10,.82),rgba(5,8,10,.98))",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 12px"}}>
-      <span style={{fontSize:15,fontWeight:900,color:chosen?spec.accent:CREAM}}>{spec.label}</span>
-      <span style={{fontSize:10,color:"rgba(239,229,204,.35)"}}>{String(Math.floor(hash(i,10)*999)).padStart(3,"0")}</span>
+    <div style={{position:"absolute",left:0,right:0,bottom:0,height:"31%",background:"linear-gradient(180deg,rgba(5,8,10,.82),rgba(5,8,10,.98))",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 10px"}}>
+      <span style={{fontSize:13,fontWeight:900,color:elite?spec.accent:"rgba(239,229,204,.68)"}}>{spec.label}</span>
+      <span style={{fontSize:9,color:"rgba(239,229,204,.28)"}}>{String(Math.floor(hash(i,10)*999)).padStart(3,"0")}</span>
     </div>
   </div>;
 };
@@ -173,7 +197,7 @@ const FlowTrails:React.FC<{filter:number;portal:number}>=({filter,portal})=>{
       const d="M -100 "+sy+" C "+(360+hash(i,4)*260)+" "+midY+", "+(980+hash(i,5)*280)+" "+(400+hash(i,6)*300)+", "+endX+" 565";
       const color=i%6===0?CYAN:i%4===0?ORANGE:GOLD2;
       const dash=26+hash(i,7)*90;
-      return <path key={i} d={d} fill="none" stroke={color} strokeOpacity={.08+hash(i,8)*.13+filter*.08} strokeWidth={.8+hash(i,9)*1.6}
+      return <path key={i} d={d} fill="none" stroke={color} strokeOpacity={.045+hash(i,8)*.09+filter*.055} strokeWidth={.8+hash(i,9)*1.6}
         strokeDasharray={dash+" "+dash*.72} strokeDashoffset={-f*(5+hash(i,10)*9)} style={{filter:"drop-shadow(0 0 5px "+color+")"}}/>;
     })}
   </svg>;
@@ -203,27 +227,45 @@ const HeadCore:React.FC<{x:number;y:number;scale:number;opacity:number;portal:nu
   </div>;
 };
 
-const SelectionNumbers:React.FC<{f:number}>=({f})=>{
-  const stages=[{t:70,v:"10,000+",x:610},{t:98,v:"100",x:970},{t:126,v:"1",x:1240}];
-  return <div style={{position:"absolute",left:0,top:0,right:0,bottom:0,zIndex:80}}>
-    {stages.map((s,i)=>{
-      const p=intro(f,s.t,18);
-      const kick=interpolate(f,[s.t,s.t+9,s.t+18],[.72,1.14,1],{extrapolateLeft:"clamp",extrapolateRight:"clamp"});
-      return <React.Fragment key={s.v}>
-        <div style={{position:"absolute",left:s.x,top:650,transform:"translate(-50%,-50%) scale("+(p*kick)+")",opacity:p,
-          fontSize:i===0?80:i===1?74:92,fontWeight:900,fontVariantNumeric:"tabular-nums",color:GOLD2,textShadow:"0 0 24px rgba(255,122,73,.5),0 12px 30px rgba(0,0,0,.6)"}}>{s.v}</div>
-        {i<stages.length-1&&<div style={{position:"absolute",left:s.x+180,top:650,fontSize:48,color:"rgba(242,184,94,.78)",opacity:p}}>→</div>}
-      </React.Fragment>;
-    })}
+const SelectionCounter:React.FC<{f:number}>=({f})=>{
+  const value=selectionValue(f);
+  const display=(f>=65&&f<91)?"10,000+":fmt(value);
+  const prior1=selectionValue(Math.max(0,f-4));
+  const prior2=selectionValue(Math.max(0,f-8));
+  const compress1=phase(f,88,142);
+  const compress2=phase(f,142,176);
+  const filter=phase(f,88,176);
+  const p=intro(f,12,22);
+  const milestone=[68,88,142,176].reduce((m,t)=>Math.max(m,1-clamp(Math.abs(f-t)/8)),0);
+  const kick=1+milestone*.075;
+  const stage=f<68?"输入涌入":f<88?"锁定输入":f<142?"第一次筛选":f<176?"最终筛选":"只剩一个";
+  return <div style={{position:"absolute",left:590,top:600,width:680,zIndex:88,opacity:p,transform:"translate(-50%,-50%)"}}>
+    <div style={{fontSize:18,letterSpacing:5,color:"rgba(91,196,212,.55)",marginBottom:12}}>LIVE SELECTION / {stage}</div>
+    <div style={{position:"relative",height:154}}>
+      <div style={{position:"absolute",left:0,top:26,fontSize:122,fontWeight:900,letterSpacing:-6,fontVariantNumeric:"tabular-nums",
+        color:GOLD2,transform:"scale("+kick+")",transformOrigin:"left center",textShadow:"0 0 28px rgba(255,122,73,.42),0 18px 54px rgba(0,0,0,.55)"}}>{display}</div>
+      {f<176&&<div style={{position:"absolute",left:4,top:8,fontSize:24,fontWeight:800,color:"rgba(239,229,204,.14)",transform:"translateY(-18px)"}}>{fmt(prior2)}</div>}
+      {f<176&&<div style={{position:"absolute",left:4,top:18,fontSize:28,fontWeight:800,color:"rgba(239,229,204,.22)",transform:"translateY(-8px)"}}>{fmt(prior1)}</div>}
+    </div>
+    <div style={{position:"relative",width:520,height:4,background:"rgba(239,229,204,.10)",borderRadius:3,overflow:"visible"}}>
+      <div style={{position:"absolute",left:0,top:0,height:4,width:(100-filter*94)+"%",background:"linear-gradient(90deg,"+CYAN+","+GOLD2+","+ORANGE+")",borderRadius:3,boxShadow:"0 0 12px rgba(242,184,94,.28)"}}/>
+      {[0,.62,.94].map((x,i)=><div key={i} style={{position:"absolute",left:(x*100)+"%",top:-5,width:2,height:14,background:"rgba(239,229,204,.28)"}}/>)}
+    </div>
+    <div style={{display:"flex",justifyContent:"space-between",width:520,marginTop:11,fontSize:15,color:"rgba(239,229,204,.38)"}}>
+      <span>10,000+</span><span>100</span><span>1</span>
+    </div>
+    <div style={{marginTop:16,fontSize:22,color:"rgba(239,229,204,.55)"}}>
+      {f<88?"信息仍在涌入":f<142?"大量内容开始失焦、退出":f<176?"注意通道继续收窄":"最终只有极少数真正进入意识"}
+    </div>
   </div>;
 };
 
 const HeroTypography:React.FC<{f:number;fade:number}>=({f,fade})=>{
   const p=intro(f,24,28)*(1-fade);
-  return <div style={{position:"absolute",right:98,top:78,width:720,zIndex:100,opacity:p,transform:"translateY("+((1-p)*24)+"px)"}}>
-    <div style={{fontSize:22,letterSpacing:6,color:"rgba(91,196,212,.62)",marginBottom:10}}>ATTENTION / SIGNAL SELECTION</div>
-    <div style={{fontSize:112,fontWeight:900,letterSpacing:-8,lineHeight:1,color:GOLD2,textShadow:"0 0 28px rgba(255,122,73,.32),0 18px 60px rgba(0,0,0,.45)"}}>注意力</div>
-    <div style={{fontSize:31,lineHeight:1.52,marginTop:22,color:"rgba(239,229,204,.80)",letterSpacing:.2}}>
+  return <div style={{position:"absolute",left:96,top:76,width:650,zIndex:100,opacity:p,transform:"translateY("+((1-p)*20)+"px)"}}>
+    <div style={{fontSize:19,letterSpacing:5,color:"rgba(91,196,212,.58)",marginBottom:9}}>ATTENTION / SIGNAL SELECTION</div>
+    <div style={{fontSize:88,fontWeight:900,letterSpacing:-6,lineHeight:1,color:GOLD2,textShadow:"0 0 24px rgba(255,122,73,.28),0 16px 50px rgba(0,0,0,.42)"}}>注意力</div>
+    <div style={{fontSize:27,lineHeight:1.48,marginTop:18,color:"rgba(239,229,204,.76)",letterSpacing:.2}}>
       每天有<span style={{color:ORANGE,fontWeight:900}}>海量信息</span>从你身边掠过，<br/>
       只有<span style={{color:GOLD2,fontWeight:900}}>极少数</span>被层层筛选，真正进入你的意识。
     </div>
@@ -232,21 +274,22 @@ const HeroTypography:React.FC<{f:number;fade:number}>=({f,fade})=>{
 
 export const V3Scene0:React.FC=()=>{
   const f=useCurrentFrame();
-  const stream=phase(f,0,92);
-  const filter=phase(f,102,190);
+  const stream=phase(f,0,78);
+  const filter=phase(f,88,180);
   const portal=phase(f,190,239);
   const fade=phase(f,198,239);
-  const camScale=interpolate(f,[0,70,150,239],[1.16,1.04,1.0,1.36],{extrapolateLeft:"clamp",extrapolateRight:"clamp",easing:Easing.inOut(Easing.cubic)});
-  const camX=interpolate(f,[0,145,239],[55,0,-215],{extrapolateLeft:"clamp",extrapolateRight:"clamp"});
+  const camScale=interpolate(f,[0,70,150,239],[1.08,1.02,1.0,1.34],{extrapolateLeft:"clamp",extrapolateRight:"clamp",easing:Easing.inOut(Easing.cubic)});
+  const camX=interpolate(f,[0,145,239],[28,0,-185],{extrapolateLeft:"clamp",extrapolateRight:"clamp"});
   return <Stage warm bokeh={false}>
     <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 77% 52%,rgba(55,28,17,.54),transparent 30%),radial-gradient(circle at 40% 40%,#0E1A20 0%,#070B0F 42%,#020304 100%)"}}/>
     <div style={{position:"absolute",inset:0,transform:"translateX("+camX+"px) scale("+camScale+")",transformOrigin:"72% 52%",perspective:1250,transformStyle:"preserve-3d"}}>
       <FlowTrails filter={filter} portal={portal}/>
       <div style={{position:"absolute",inset:0,transformStyle:"preserve-3d"}}>
-        {Array.from({length:76}).map((_,i)=><InfoTile key={i} i={i} stream={stream} filter={filter} portal={portal}/>)}
+        {Array.from({length:44}).map((_,i)=><InfoTile key={i} i={i} stream={stream} filter={filter} portal={portal}/>)}
       </div>
-      <HeadCore x={1480+portal*130} y={565} scale={.92} opacity={.35+.65*stream} portal={portal}/>
-      <SelectionNumbers f={f}/>
+      <div style={{position:"absolute",left:190,top:350,width:810,height:470,borderRadius:"50%",background:"radial-gradient(ellipse,rgba(3,5,7,.72),rgba(3,5,7,.15) 58%,transparent 78%)",pointerEvents:"none"}}/>
+      <HeadCore x={1490+portal*125} y={565} scale={.86} opacity={.30+.70*stream} portal={portal}/>
+      <SelectionCounter f={f}/>
     </div>
     <HeroTypography f={f} fade={fade}/>
     <div style={{position:"absolute",left:96,bottom:78,zIndex:120,opacity:1-fade}}>
@@ -258,27 +301,26 @@ export const V3Scene0:React.FC=()=>{
 };
 
 const CounterSurge:React.FC<{f:number;collapse:number}>=({f,collapse})=>{
-  const marks=[1,12,537,82000,3200000,1000000000];
-  const points=[18,34,52,72,94,116];
-  let value=1;
-  for(let i=0;i<marks.length-1;i++){
-    if(f>=points[i]&&f<points[i+1]){
-      const p=smoother(clamp((f-points[i])/(points[i+1]-points[i])));
-      const la=Math.log10(marks[i]),lb=Math.log10(marks[i+1]);
-      value=Math.pow(10,lerp(la,lb,p));
-      break;
-    }
-    if(f>=points[points.length-1])value=marks[marks.length-1];
-  }
+  const value=surgeValue(f);
+  const prior1=surgeValue(Math.max(0,f-3));
+  const prior2=surgeValue(Math.max(0,f-6));
+  const milestone=[30,51,73,96,121].reduce((m,t)=>Math.max(m,1-clamp(Math.abs(f-t)/7)),0);
   const p=intro(f,6,18);
-  return <div style={{position:"absolute",left:730,top:560,zIndex:90,opacity:p*(1-collapse),transform:"translate(-50%,-50%) scale("+(1-collapse*.66)+")"}}>
-    <div style={{fontSize:138,fontWeight:900,letterSpacing:-8,fontVariantNumeric:"tabular-nums",color:CREAM,textShadow:"0 0 30px rgba(255,122,73,.38),0 22px 70px rgba(0,0,0,.55)"}}>{fmt(value)}</div>
-    <div style={{fontSize:28,fontWeight:900,color:ORANGE,letterSpacing:3,textAlign:"right"}}>INPUT SURGE</div>
+  const kick=1+milestone*.065;
+  return <div style={{position:"absolute",left:680,top:575,zIndex:90,opacity:p*(1-collapse),transform:"translate(-50%,-50%) scale("+(1-collapse*.66)+")"}}>
+    <div style={{fontSize:18,letterSpacing:5,color:"rgba(91,196,212,.58)",marginBottom:12}}>LIVE INPUT / COUNTING</div>
+    <div style={{position:"relative",height:178,minWidth:720}}>
+      <div style={{position:"absolute",left:0,top:40,fontSize:142,fontWeight:900,letterSpacing:-8,fontVariantNumeric:"tabular-nums",color:CREAM,
+        transform:"scale("+kick+")",transformOrigin:"left center",textShadow:"0 0 32px rgba(255,122,73,.40),0 22px 70px rgba(0,0,0,.55)"}}>{fmt(value)}</div>
+      <div style={{position:"absolute",left:4,top:7,fontSize:26,fontWeight:800,color:"rgba(239,229,204,.12)"}}>{fmt(prior2)}</div>
+      <div style={{position:"absolute",left:4,top:22,fontSize:31,fontWeight:800,color:"rgba(239,229,204,.20)"}}>{fmt(prior1)}</div>
+    </div>
+    <div style={{fontSize:26,fontWeight:900,color:ORANGE,letterSpacing:3}}>INPUT SURGE · ACCELERATING</div>
   </div>;
 };
 
 const FunnelParticles:React.FC<{p:number;collapse:number}>=({p,collapse})=>{
-  return <>{Array.from({length:260}).map((_,i)=>{
+  return <>{Array.from({length:150}).map((_,i)=>{
     const x0=-110+hash(i,1)*1050;
     const y0=140+hash(i,2)*820;
     const keep=i%39===0||i%61===0;
@@ -331,7 +373,7 @@ export const V3Scene1:React.FC=()=>{
     <div style={{position:"absolute",inset:0,transform:"translate("+sx+"px,"+sy+"px) scale("+(1+portal*.32)+")",transformOrigin:"57% 51%"}}>
       <FunnelParticles p={input} collapse={collapse}/>
       <svg width={W} height={H} style={{position:"absolute",inset:0}}>
-        {Array.from({length:26}).map((_,i)=>{
+        {Array.from({length:16}).map((_,i)=>{
           const sy0=90+hash(i,2)*900;
           const d="M -40 "+sy0+" C 350 "+(180+hash(i,4)*690)+", 690 "+(360+hash(i,5)*390)+", 1050 545";
           const col=i%5===0?CYAN:i%3===0?ORANGE:GOLD2;
