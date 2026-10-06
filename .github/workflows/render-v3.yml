@@ -6,6 +6,7 @@ on:
     paths:
       - 'src/v3-opening.tsx'
       - 'src/v3-index.tsx'
+      - 'src/v3-scenes-a.tsx'
       - 'src/v2-common.tsx'
       - 'src/v2-scenes-a.tsx'
       - 'src/v2-scenes-b.tsx'
@@ -47,6 +48,20 @@ jobs:
       - name: Render opening 16s review
         run: |
           npx remotion render src/v3-index.tsx AttentionV3 out/attention-v3-opening-16s.mp4 --codec=h264 --crf=17 --concurrency=2 --frames=0-479
+      - name: Render 16-40s proof frames
+        run: |
+          mkdir -p out/v3-scenes-16-40
+          for pair in "16.8:504" "18.0:540" "19.6:588" "21.0:630" "22.8:684" "24.8:744" "26.0:780" "27.6:828" "29.2:876" "32.8:984" "35.0:1050" "38.0:1140"; do
+            name="${pair%%:*}"
+            frame="${pair##*:}"
+            npx remotion still src/v3-index.tsx AttentionV3 "out/v3-scenes-16-40/${name}s.png" --frame="${frame}" --image-format=png
+          done
+      - name: 16-40s contact sheet
+        run: |
+          ffmpeg -y -pattern_type glob -i 'out/v3-scenes-16-40/*.png'             -vf "scale=640:-1,tile=3x4:padding=8:margin=8:color=0x07090B"             -frames:v 1 out/v3-scenes-16-40-contact.jpg
+      - name: Render 16-40s review
+        run: |
+          npx remotion render src/v3-index.tsx AttentionV3 out/attention-v3-scenes-16-40s.mp4 --codec=h264 --crf=17 --concurrency=2 --frames=480-1199
       - name: Render full-film keyframes
         run: |
           mkdir -p out/v3-keyframes
@@ -71,6 +86,9 @@ jobs:
           path: |
             out/attention-is-all-you-need-v3.mp4
             out/attention-v3-opening-16s.mp4
+            out/attention-v3-scenes-16-40s.mp4
+            out/v3-scenes-16-40-contact.jpg
+            out/v3-scenes-16-40/*.png
             out/v3-opening-contact.jpg
             out/v3-opening/*.png
             out/v3-contact-sheet.jpg
