@@ -10,7 +10,7 @@ os.makedirs(os.path.dirname(OUT) or ".", exist_ok=True)
 # Minimal generative soundtrack: warm pad + pulse + filtered noise swells.
 # No external Python dependencies, deterministic output.
 random.seed(7)
-scene_marks = [0,7,15,23,31,39,47,55,63,72,81,90,99,107,114,120]
+scene_marks = [0,8,16,24,32,40,48,56,64,72,80,88,96,104,112,120]
 chords = [
     (110.0, 164.81, 220.0),      # A
     (98.0, 146.83, 196.0),       # G
@@ -63,7 +63,7 @@ with wave.open(OUT, "wb") as wf:
             e = math.exp(-beat_phase*18)
             pulse = 0.16*e*(tone(55, t) + 0.45*tone(82.5, t))
 
-        # Soft whoosh around scene transitions.
+        # Soft whoosh around scene transitions. The marks are aligned to the actual 8s visual boundaries.
         whoosh = 0.0
         for m in scene_marks[1:-1]:
             d = abs(t-m)
@@ -87,18 +87,22 @@ with wave.open(OUT, "wb") as wf:
             e = math.exp(-tick_phase*80)
             tick = 0.08*e*tone(1760, t)
 
-        # Cinematic event accents: pre-whoosh + low metallic impact near scene boundaries.
+        # Cinematic event accents: anticipation -> boundary impact -> short release.
+        # This avoids "one sound per slide": the audio starts moving before the picture
+        # changes and resolves after the new scene has already inherited the carrier.
         hit = 0.0
         for m in scene_marks[1:-1]:
             dt = t - m
-            if -0.38 < dt < 0:
-                e = 1.0 - abs(dt)/0.38
+            if -0.48 < dt < 0:
+                e = smoothstep((dt + 0.48)/0.48)
                 n = math.sin((t*421.0 + m)*18.17) * math.sin((t*97.0 + m)*31.73)
-                hit += 0.07 * (e*e) * n
-            if 0 <= dt < 0.32:
-                e = math.exp(-dt*10.0)
-                hit += 0.12*e*tone(48 + (m % 4)*6, t, 0.35)
-                hit += 0.045*e*tone(710 + (m % 5)*80, t, 0.1)
+                hit += 0.055 * (e*e) * n
+                hit += 0.025 * e * tone(180 + (m % 3)*35, t, 0.2)
+            if 0 <= dt < 0.42:
+                e = math.exp(-dt*8.5)
+                hit += 0.105*e*tone(48 + (m % 4)*6, t, 0.35)
+                hit += 0.034*e*tone(710 + (m % 5)*80, t, 0.1)
+                hit += 0.022*math.exp(-dt*4.8)*tone(220 + (m % 4)*42, t, 1.0)
 
         # A few story-specific accents: aperture lock, memory ignition, paper open, ending bloom.
         for m, base in [(16,62),(32,52),(64,74),(96,46),(112,58)]:
