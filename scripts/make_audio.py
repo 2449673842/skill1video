@@ -7,15 +7,15 @@ DUR = 120.0
 N = int(SR * DUR)
 os.makedirs(os.path.dirname(OUT) or ".", exist_ok=True)
 
-# Minimal generative soundtrack: warm pad + pulse + filtered noise swells.
-# No external Python dependencies, deterministic output.
+# V4.2 generative soundtrack: warm pad plus event-led accents.
+# No external dependencies; deterministic output.
 random.seed(7)
 scene_marks = [0,8,16,24,32,40,48,56,64,72,80,88,96,104,112,120]
 chords = [
-    (110.0, 164.81, 220.0),      # A
-    (98.0, 146.83, 196.0),       # G
-    (82.41, 123.47, 164.81),     # E
-    (73.42, 110.0, 146.83),      # D
+    (110.0, 164.81, 220.0),
+    (98.0, 146.83, 196.0),
+    (82.41, 123.47, 164.81),
+    (73.42, 110.0, 146.83),
 ]
 
 def smoothstep(x):
@@ -27,11 +27,6 @@ def scene_index(t):
         if scene_marks[i] <= t < scene_marks[i+1]:
             return i
     return len(scene_marks)-2
-
-def env(t, a, b, feather=0.7):
-    if t < a or t > b:
-        return 0.0
-    return smoothstep((t-a)/feather) * smoothstep((b-t)/feather)
 
 def tone(freq, t, phase=0.0):
     return math.sin(2*math.pi*freq*t + phase)
@@ -46,77 +41,61 @@ with wave.open(OUT, "wb") as wf:
         si = scene_index(t)
         chord = chords[(si // 2) % len(chords)]
 
-        # Slowly breathing three-note pad.
-        pad_env = 0.34 + 0.18*math.sin(2*math.pi*t/17.0)
+        # Slow pad. This is atmosphere, not a beat clock.
+        pad_env = 0.34 + 0.12*math.sin(2*math.pi*t/19.0)
         pad = (
             0.46*tone(chord[0], t, 0.2) +
             0.30*tone(chord[1], t, 1.1) +
-            0.20*tone(chord[2], t, 2.2)
-        )
-        pad += 0.14*tone(chord[0]/2, t, 0.8)
-        pad *= 0.22*pad_env
+            0.20*tone(chord[2], t, 2.2) +
+            0.14*tone(chord[0]/2, t, 0.8)
+        ) * 0.21*pad_env
 
-        # Subtle heartbeat/pulse every 2 seconds.
-        beat_phase = t % 2.0
+        # Pulses exist only where the visual action has momentum.
         pulse = 0.0
-        if beat_phase < 0.18:
-            e = math.exp(-beat_phase*18)
-            pulse = 0.16*e*(tone(55, t) + 0.45*tone(82.5, t))
+        pulse_windows = [(17.0,23.5),(40.0,46.0),(56.0,62.8),(72.0,80.5),(104.0,110.5)]
+        if any(a <= t <= b for a,b in pulse_windows):
+            beat_phase = t % 2.4
+            if beat_phase < 0.16:
+                e = math.exp(-beat_phase*20)
+                pulse = 0.11*e*(tone(52,t) + 0.35*tone(78,t))
 
-        # Soft whoosh around scene transitions. The marks are aligned to the actual 8s visual boundaries.
+        # Story events, not every scene boundary.
+        event_marks = [15.8,31.7,50.6,61.9,79.1,100.7,108.7,116.8]
         whoosh = 0.0
-        for m in scene_marks[1:-1]:
-            d = abs(t-m)
-            if d < 0.55:
-                e = 1.0 - d/0.55
-                # Deterministic pseudo-noise from sin products.
-                n = math.sin((t*731.0 + m)*12.9898) * math.sin((t*193.0 + m)*78.233)
-                whoosh += 0.12*(e*e)*n
+        for m in event_marks:
+            d = t - m
+            if -0.42 < d < 0.18:
+                u = (d + 0.42) / 0.60
+                e = math.sin(math.pi*max(0.0,min(1.0,u)))
+                n = math.sin((t*421.0+m)*18.17)*math.sin((t*97.0+m)*31.73)
+                whoosh += 0.060*(e*e)*n
 
-        # Dramatic quiet pocket around 96-99s.
+        # Quiet explanatory zones: static frames should feel intentionally quiet.
         duck = 1.0
-        if 96 <= t < 99:
-            duck = max(0.06, 1.0 - smoothstep((t-96)/1.0)*0.94)
-        if 99 <= t < 101:
-            duck = 0.06 + smoothstep((t-99)/2.0)*0.94
+        quiet_windows = [(24.6,26.7),(52.0,54.2),(63.6,65.0),(96.0,100.25),(111.0,112.5)]
+        for qa,qb in quiet_windows:
+            if qa <= t <= qb:
+                fade_in = smoothstep((t-qa)/0.45)
+                fade_out = smoothstep((qb-t)/0.45)
+                duck = min(duck, 0.12 + 0.88*(1.0-min(fade_in,fade_out)))
 
-        # Small high tick every 4 seconds; disappears in quiet pocket.
-        tick_phase = t % 4.0
-        tick = 0.0
-        if tick_phase < 0.04 and not (96 <= t < 101):
-            e = math.exp(-tick_phase*80)
-            tick = 0.08*e*tone(1760, t)
-
-        # Cinematic event accents: anticipation -> boundary impact -> short release.
-        # This avoids "one sound per slide": the audio starts moving before the picture
-        # changes and resolves after the new scene has already inherited the carrier.
         hit = 0.0
-        for m in scene_marks[1:-1]:
-            dt = t - m
-            if -0.48 < dt < 0:
-                e = smoothstep((dt + 0.48)/0.48)
-                n = math.sin((t*421.0 + m)*18.17) * math.sin((t*97.0 + m)*31.73)
-                hit += 0.055 * (e*e) * n
-                hit += 0.025 * e * tone(180 + (m % 3)*35, t, 0.2)
-            if 0 <= dt < 0.42:
-                e = math.exp(-dt*8.5)
-                hit += 0.105*e*tone(48 + (m % 4)*6, t, 0.35)
-                hit += 0.034*e*tone(710 + (m % 5)*80, t, 0.1)
-                hit += 0.022*math.exp(-dt*4.8)*tone(220 + (m % 4)*42, t, 1.0)
+        accents = [(15.8,62),(31.7,54),(50.6,70),(61.9,58),(79.1,66),(100.7,48),(108.7,57),(116.8,61)]
+        for m,base in accents:
+            dt = t-m
+            if -0.20 < dt < 0:
+                e = smoothstep((dt+0.20)/0.20)
+                hit += 0.018*e*tone(base*3.0,t,0.3)
+            if 0 <= dt < 0.34:
+                e = math.exp(-dt*9.5)
+                hit += 0.082*e*tone(base,t,0.35)
+                hit += 0.024*e*tone(base*7.0,t,0.1)
 
-        # A few story-specific accents: aperture lock, memory ignition, paper open, ending bloom.
-        for m, base in [(16,62),(32,52),(64,74),(96,46),(112,58)]:
-            dt = abs(t-m)
-            if dt < 0.26:
-                e = math.exp(-dt*18)
-                hit += 0.09*e*tone(base, t) + 0.035*e*tone(base*8.0, t, 0.4)
+        sample = (pad + pulse + whoosh + hit) * duck
 
-        sample = (pad + pulse + whoosh + tick + hit) * duck
-
-        # Gentle stereo drift.
-        pan = 0.15*math.sin(2*math.pi*t/13.0)
-        l = max(-1.0, min(1.0, sample*(1-pan)))
-        r = max(-1.0, min(1.0, sample*(1+pan)))
+        pan = 0.10*math.sin(2*math.pi*t/15.0)
+        l = max(-1.0,min(1.0,sample*(1-pan)))
+        r = max(-1.0,min(1.0,sample*(1+pan)))
         block += struct.pack("<hh", int(l*32767), int(r*32767))
 
         if len(block) >= 65536:
