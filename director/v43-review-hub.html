@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>V4.3 Review Hub</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",sans-serif;background:#06080a;color:#efe5cc}
+*{box-sizing:border-box}body{margin:0;background:#06080a}.wrap{max-width:1500px;margin:auto;padding:18px}
+.top{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.top h1{margin:0;font-size:22px}.muted{color:#969b9a;font-size:13px;line-height:1.6}
+.grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(340px,.8fr);gap:14px;margin-top:14px}
+.card{background:#0b0e11;border:1px solid #262b30;border-radius:12px;padding:12px;box-shadow:0 18px 60px #0006}
+video{width:100%;aspect-ratio:16/9;background:#000;border-radius:8px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+button,a.btn,label.btn{border:1px solid #343a40;background:#11161a;color:#eee7d9;border-radius:8px;padding:8px 11px;font-size:12px;text-decoration:none;cursor:pointer}
+button:hover,a.btn:hover,label.btn:hover{border-color:#d9b26f}.timeline{margin-top:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.beat{border:1px solid #24292e;border-radius:8px;padding:8px;background:#080b0e;cursor:pointer}.beat b{font-size:12px;color:#f0d79a}.beat span{display:block;font-size:11px;color:#909593;margin-top:3px}
+h2{font-size:14px;margin:0 0 10px;color:#f0d79a}.field{display:flex;gap:7px;margin-bottom:8px}.field input,.field select,.field textarea{width:100%;background:#070a0c;border:1px solid #30363b;border-radius:7px;color:#efe5cc;padding:8px}
+textarea{min-height:120px;resize:vertical}.notes{max-height:310px;overflow:auto;border-top:1px solid #252a2f;margin-top:8px;padding-top:8px}
+.note{border:1px solid #24292d;border-radius:8px;padding:8px;margin-bottom:7px;background:#090c0f}.note time{color:#d9b26f;font-size:11px}.note p{font-size:12px;line-height:1.5;margin:5px 0 0}
+.rule{font-size:12px;line-height:1.55;color:#aeb1ae}.links{display:flex;gap:7px;flex-wrap:wrap}.small{font-size:11px;color:#7f8584}
+iframe{width:100%;height:520px;border:1px solid #262b30;border-radius:10px;background:#050709;margin-top:12px}
+@media(max-width:1000px){.grid{grid-template-columns:1fr}.timeline{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div><h1>Attention V4.3 · Review Hub</h1>
+      <div class="muted">用于实际看成片、跳关键时间点、下载 MP4、对照导演预演，并把你的意见按时间点记录下来。最终判断以编码后的 MP4 为准。</div>
+    </div>
+    <div class="links">
+      <a class="btn" id="download" href="../out/attention-is-all-you-need-v4-3.mp4" download>下载完整 MP4</a>
+      <a class="btn" href="v43-director-preview.html">打开动态设计稿</a>
+      <a class="btn" href="../docs/v43-55-rules.md">55 条规则</a>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>最终 MP4 / 实际审片</h2>
+      <video id="video" controls preload="metadata" src="../out/attention-is-all-you-need-v4-3.mp4"></video>
+      <div class="toolbar">
+        <label class="btn">选择本地 MP4<input id="file" type="file" accept="video/mp4" hidden></label>
+        <button id="back">-5s</button><button id="fwd">+5s</button>
+        <button id="mark">把当前时间带入意见</button>
+        <span class="small" id="status">若相对路径无法播放，可直接选择下载到本机的 MP4。</span>
+      </div>
+      <div class="timeline" id="beats"></div>
+    </div>
+
+    <div class="card">
+      <h2>效果讨论 / 时间点批注</h2>
+      <div class="field"><input id="tc" placeholder="时间点，例如 42.10s"/></div>
+      <div class="field"><select id="kind">
+        <option>转场</option><option>节奏</option><option>镜头</option><option>主体动作</option>
+        <option>字幕</option><option>声音</option><option>画面信息量</option><option>其他</option>
+      </select></div>
+      <div class="field"><textarea id="text" placeholder="例如：42.1s 这里工作卡接力很好，但落位后需要多停 0.8s；不要再加 zoom。"></textarea></div>
+      <div class="toolbar"><button id="add">加入意见</button><button id="export">导出 Markdown</button><button id="clear">清空</button></div>
+      <div class="notes" id="notes"></div>
+      <div class="rule"><b>讨论时默认用这个格式：</b><br/>时间点 → 当前主角 → 发生了什么 → 哪一点不自然 → 希望变成什么 → 是否需要静止/延长 settle。</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h2>导演预演 / 规划对照</h2>
+    <div class="muted">下面嵌入 V4.3 动态设计稿。它用于讨论“应该怎么动”；上面的 MP4 用于判断“实际做出来是否自然”。</div>
+    <iframe src="v43-director-preview.html"></iframe>
+  </div>
+</div>
+<script>
+const beats=[
+[0,'输入','卡片出现后稳定阅读'],[8.5,'筛选','同一对象穿过优先级门'],[20,'注意盲视','对象身份转为人物焦点'],
+[31.5,'搜索灯','焦点关系接力'],[42.0,'竞争','工作目标成为竞价主体'],[53.6,'工作区','卡本身展开为工作窗口'],
+[66.0,'连接','工作区关系长成网络'],[78.6,'轨道','网络简化成重复路径'],[91.0,'分叉','先停再出现选择'],
+[100.6,'矩阵','选择终点成为矩阵单元'],[109.0,'纸页','矩阵单元直接拉宽成纸'],[116.1,'生长','时间块长成枝干'],[118.4,'终章','停止动作，读结论']
+];
+const video=document.getElementById('video'), file=document.getElementById('file'), tc=document.getElementById('tc');
+const notesEl=document.getElementById('notes'), text=document.getElementById('text'), kind=document.getElementById('kind');
+const KEY='attention-v43-review-notes';
+document.getElementById('beats').innerHTML=beats.map((b,i)=>'<div class="beat" data-t="'+b[0]+'"><b>'+b[0].toFixed(1)+'s · '+b[1]+'</b><span>'+b[2]+'</span></div>').join('');
+document.querySelectorAll('.beat').forEach(el=>el.onclick=()=>{video.currentTime=+el.dataset.t;video.play().catch(()=>{})});
+document.getElementById('back').onclick=()=>video.currentTime=Math.max(0,video.currentTime-5);
+document.getElementById('fwd').onclick=()=>video.currentTime=Math.min(video.duration||120,video.currentTime+5);
+document.getElementById('mark').onclick=()=>{tc.value=video.currentTime.toFixed(2)+'s';text.focus()};
+file.onchange=()=>{const f=file.files[0];if(!f)return;video.src=URL.createObjectURL(f);document.getElementById('status').textContent='正在查看本地文件：'+f.name};
+const load=()=>JSON.parse(localStorage.getItem(KEY)||'[]');
+const save=x=>localStorage.setItem(KEY,JSON.stringify(x));
+function render(){const n=load();notesEl.innerHTML=n.map((x,i)=>'<div class="note"><time>'+x.time+' · '+x.kind+'</time><p>'+escapeHtml(x.text)+'</p><button data-i="'+i+'" class="del">删除</button></div>').join('');document.querySelectorAll('.del').forEach(b=>b.onclick=()=>{const a=load();a.splice(+b.dataset.i,1);save(a);render()})}
+function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+document.getElementById('add').onclick=()=>{if(!text.value.trim())return;const a=load();a.push({time:tc.value||video.currentTime.toFixed(2)+'s',kind:kind.value,text:text.value.trim()});save(a);text.value='';render()};
+document.getElementById('clear').onclick=()=>{if(confirm('清空全部审片意见？')){save([]);render()}};
+document.getElementById('export').onclick=()=>{const a=load();let md='# Attention V4.3 审片意见\n\n'+a.map(x=>'## '+x.time+' · '+x.kind+'\n'+x.text+'\n').join('\n');const u=URL.createObjectURL(new Blob([md],{type:'text/markdown'}));const l=document.createElement('a');l.href=u;l.download='attention-v43-review-notes.md';l.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
+render();
+</script>
+</body>
+</html>
