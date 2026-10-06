@@ -77,9 +77,6 @@ jobs:
           name: attention-v4-2-directed-rhythm
           path: |
             out/attention-is-all-you-need-v4-2.mp4
-            out/attention-v4-2-first-40s.mp4
-            out/attention-v4-2-middle-40s.mp4
-            out/attention-v4-2-final-40s.mp4
             out/v4-2-rhythm-contact.jpg
             out/v4-2-rhythm/*.png
             out/v4-2-media-info.json
