@@ -6,10 +6,12 @@ export const V2Scene5:React.FC=()=>{
   const f=useCurrentFrame();
   const cards=[["新奇","刚刚发生",GOLD2],["愤怒","必须点开",RED],["社交","有人@你",TEAL],["奖励","再刷一个",GOLD]];
   const chosen=Math.floor(f/60)%4;
+  const sceneEntry=intro(f,8,22);
+  const inheritedCard=intro(f,14,14);
   return <Stage>
     <Kicker>AUCTION / WHO GETS THE NEXT SECOND?</Kicker>
     <SplitTitle a="你的下一秒，" b="正在被很多东西竞价。" y={108}/>
-    <RingMachine x={960} y={585} scale={.58} opacity={.45} speed={2.2}/>
+    <RingMachine x={960} y={585} scale={.58} opacity={.45*sceneEntry} speed={2.2}/>
     {cards.map((c,i)=>{
       const ang=-1.35+i*.9+Math.sin(f*.012)*.08;
       const r=365;
@@ -20,6 +22,7 @@ export const V2Scene5:React.FC=()=>{
         transform:"translate(-50%,-50%) scale("+sc+") rotate("+((i-1.5)*3)+"deg)",
         border:"1px solid "+(active?String(c[2]):"rgba(217,178,111,.22)"),
         background:"linear-gradient(150deg,rgba(18,24,24,.96),rgba(7,9,11,.94))",
+        opacity:i===0?inheritedCard:sceneEntry,
         borderRadius:18,boxShadow:active?"0 0 50px "+String(c[2])+",0 28px 70px rgba(0,0,0,.4)":"0 22px 60px rgba(0,0,0,.3)"}}>
         <div style={{padding:"22px 24px 0",fontSize:34,fontWeight:900,color:active?String(c[2]):CREAM}}>{c[0]}</div>
         <div style={{padding:"8px 24px",fontSize:22,color:"rgba(239,229,204,.52)"}}>{c[1]}</div>
@@ -28,7 +31,7 @@ export const V2Scene5:React.FC=()=>{
         </div>
       </div>;
     })}
-    <div style={{position:"absolute",left:960,top:585,transform:"translate(-50%,-50%)",fontSize:24,letterSpacing:3,color:"rgba(239,229,204,.44)"}}>NEXT SECOND</div>
+    <div style={{position:"absolute",left:960,top:585,transform:"translate(-50%,-50%)",fontSize:24,letterSpacing:3,color:"rgba(239,229,204,.44)",opacity:sceneEntry}}>NEXT SECOND</div>
     <Caption>如果你不主动决定优先级，环境就会用新奇、情绪和即时奖励替你决定。</Caption>
   </Stage>;
 };
@@ -100,10 +103,11 @@ export const V2Scene8:React.FC=()=>{
   const f=useCurrentFrame();
   const active=Math.floor(f/7);
   const nodes=Array.from({length:58});
+  const sceneEntry=intro(f,10,22);
   return <Stage warm>
     <Kicker>MEMORY / CONSTELLATION</Kicker>
     <SplitTitle a="被注意过的东西，" b="更有机会留下可再次访问的痕迹。" y={105}/>
-    <div style={{position:"absolute",left:960,top:590,width:790,height:520,transform:"translate(-50%,-50%)"}}>
+    <div style={{position:"absolute",left:960,top:590,width:790,height:520,transform:"translate(-50%,-50%)",opacity:sceneEntry}}>
       <svg width={790} height={520}>
         {nodes.map((_,i)=>{
           if(i===0)return null;
@@ -116,7 +120,7 @@ export const V2Scene8:React.FC=()=>{
         })}
       </svg>
     </div>
-    <RingMachine x={960} y={590} scale={.34} opacity={.52} speed={.65}/>
+    <RingMachine x={960} y={590} scale={.34} opacity={.52*sceneEntry} speed={.65}/>
     <Caption>注意力不是记忆本身，但它会改变哪些信号被编码、强化，并更容易被未来的你重新找到。</Caption>
   </Stage>;
 };
