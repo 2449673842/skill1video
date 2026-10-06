@@ -1,6 +1,6 @@
 import React from "react";
 import {Composition, registerRoot} from "remotion";
-import {V43Film, FPS, W, H, DURATION} from "./v43-film";
+import {DURATION, FPS, H, V43Film, W} from "./v43-film";
 
 const Root:React.FC=()=>(
   <Composition
