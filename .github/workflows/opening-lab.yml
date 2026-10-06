@@ -1,0 +1,54 @@
+name: Render Opening Lab
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/opening-lab.tsx'
+      - '.github/workflows/opening-lab.yml'
+      - 'package.json'
+  workflow_dispatch:
+
+jobs:
+  render-opening:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk ffmpeg
+          npm install --no-audit --no-fund
+      - name: Verify composition
+        run: npx remotion compositions src/opening-lab.tsx
+      - name: Render keyframes
+        run: |
+          mkdir -p out/opening-lab
+          for pair in "00.7:21" "02.1:63" "03.7:111" "05.2:156" "06.4:192" "07.7:231"; do
+            name="${pair%%:*}"
+            frame="${pair##*:}"
+            npx remotion still src/opening-lab.tsx AttentionOpeningLab "out/opening-lab/${name}s.png" --frame="${frame}" --image-format=png
+          done
+      - name: Render contact sheet
+        run: |
+          ffmpeg -y -pattern_type glob -i 'out/opening-lab/*.png'             -vf "scale=768:-1,tile=2x3:padding=10:margin=10:color=0x080A0C"             -frames:v 1 out/opening-lab-contact.jpg
+      - name: Render 8 second prototype
+        run: npx remotion render src/opening-lab.tsx AttentionOpeningLab out/opening-lab.mp4 --codec=h264 --crf=16 --concurrency=2
+      - name: Probe
+        run: |
+          ffprobe -v error -show_entries format=duration,size -show_entries stream=codec_name,width,height,r_frame_rate -of json out/opening-lab.mp4 > out/opening-lab-media.json
+          ffmpeg -v error -i out/opening-lab.mp4 -f null -
+      - name: Upload opening lab
+        uses: actions/upload-artifact@v4
+        with:
+          name: attention-opening-lab
+          path: |
+            out/opening-lab.mp4
+            out/opening-lab-contact.jpg
+            out/opening-lab/*.png
+            out/opening-lab-media.json
+          retention-days: 7
