@@ -1,6 +1,6 @@
 import React from "react";
 import {interpolate,useCurrentFrame} from "remotion";
-import {Stage,Kicker,Caption,GridFloor,RingMachine,FocusReticle,Paper,GlowLine,Word,SplitTitle,GOLD,GOLD2,CREAM,TEAL,RED,INK,frames,hash,clamp,lerp,smooth,smoother,intro} from "./v2-common";
+import {Stage,Kicker,Caption,GridFloor,RingMachine,FocusReticle,Paper,GlowLine,Word,SplitTitle,GOLD,GOLD2,CREAM,TEAL,RED,INK,W,H,frames,hash,clamp,lerp,smooth,smoother,intro} from "./v2-common";
 
 export const V2Scene10:React.FC=()=>{
   const f=useCurrentFrame();
