@@ -65,7 +65,7 @@ export const V2Scene1:React.FC=()=>{
     <div style={{position:"absolute",left:1180,top:455,width:620,fontSize:36,fontWeight:800,lineHeight:1.45}}>
       海量输入，不会变成海量意识。<br/><span style={{color:GOLD2}}>绝大多数在进入“此刻”之前就被过滤掉了。</span>
     </div>
-    <Source dark={undefined}>Zheng & Meister, Neuron 113(2), 2025 · 量级估算</Source>
+    <Source>Zheng & Meister, Neuron 113(2), 2025 · 量级估算</Source>
   </Stage>;
 };
 
