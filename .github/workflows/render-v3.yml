@@ -36,14 +36,17 @@ jobs:
       - name: Render opening proof frames
         run: |
           mkdir -p out/v3-opening
-          for pair in "00.8:24" "02.2:66" "03.8:114" "05.0:150" "06.4:192" "07.6:228"; do
+          for pair in "00.8:24" "01.6:48" "02.4:72" "03.2:96" "04.0:120" "04.8:144" "05.6:168" "06.4:192" "07.2:216" "08.8:264" "11.2:336" "15.0:450"; do
             name="${pair%%:*}"
             frame="${pair##*:}"
             npx remotion still src/v3-index.tsx AttentionV3 "out/v3-opening/${name}s.png" --frame="${frame}" --image-format=png
           done
       - name: Opening contact sheet
         run: |
-          ffmpeg -y -pattern_type glob -i 'out/v3-opening/*.png'             -vf "scale=768:-1,tile=2x3:padding=9:margin=9:color=0x07090B"             -frames:v 1 out/v3-opening-contact.jpg
+          ffmpeg -y -pattern_type glob -i 'out/v3-opening/*.png'             -vf "scale=640:-1,tile=3x4:padding=8:margin=8:color=0x07090B"             -frames:v 1 out/v3-opening-contact.jpg
+      - name: Render opening 16s review
+        run: |
+          npx remotion render src/v3-index.tsx AttentionV3 out/attention-v3-opening-16s.mp4 --codec=h264 --crf=17 --concurrency=2 --frames=0-479
       - name: Render full-film keyframes
         run: |
           mkdir -p out/v3-keyframes
@@ -67,6 +70,7 @@ jobs:
           name: attention-v3-cinematic
           path: |
             out/attention-is-all-you-need-v3.mp4
+            out/attention-v3-opening-16s.mp4
             out/v3-opening-contact.jpg
             out/v3-opening/*.png
             out/v3-contact-sheet.jpg
