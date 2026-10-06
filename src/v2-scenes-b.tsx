@@ -75,6 +75,7 @@ export const V2Scene7:React.FC=()=>{
     <Kicker>BOTTLENECK / NARROW BRIDGE</Kicker>
     <div style={{position:"absolute",left:105,top:112,fontSize:58,fontWeight:900}}>意识像一座<span style={{color:GOLD2}}>窄桥。</span></div>
     <GridFloor opacity={.2} horizon={370}/>
+    {Array.from({length:6}).map((_,i)=>{const z=i/5; const w=520-z*270; const h=110-z*45; const x=960+(i%2===0?-1:1)*(350-z*120); const y=420+i*58; return <div key={"arch"+i} style={{position:"absolute",left:x-w/2,top:y-h/2,width:w,height:h,border:"1px solid rgba(217,178,111,"+(.08+z*.08)+")",borderRadius:"50%",transform:"perspective(900px) rotateX(68deg)",boxShadow:"0 0 35px rgba(217,178,111,.04)"}}/>;})}
     <div style={{position:"absolute",left:805,top:370,width:310,height:710,
       clipPath:"polygon(45% 0,55% 0,72% 100%,28% 100%)",
       background:"linear-gradient(180deg,rgba(217,178,111,.18),rgba(217,178,111,.04))",
@@ -131,6 +132,7 @@ export const V2Scene9:React.FC=()=>{
     <Kicker>REPETITION / GROOVE</Kicker>
     <SplitTitle a="注意一次，是选择。" b="反复注意，会把选择压成轨道。" y={105}/>
     <GridFloor opacity={.16} horizon={420}/>
+    {Array.from({length:18}).map((_,i)=>{const xx=160+hash(i,5)*1600; const yy=430+hash(i,6)*420; const s=3+hash(i,7)*8; return <div key={"dust"+i} style={{position:"absolute",left:xx,top:yy,width:s,height:s,borderRadius:"50%",background:i%5===0?GOLD2:"rgba(217,178,111,.28)",filter:"blur("+(i%4===0?2:0)+"px)",boxShadow:i%5===0?"0 0 14px "+GOLD2:"none"}}/>;})}
     <svg width={1920} height={1080} style={{position:"absolute",inset:0}}>
       {Array.from({length:6}).map((_,i)=><path key={i} d="M 300 760 C 620 470, 980 860, 1650 500" fill="none"
         stroke={"rgba(217,178,111,"+(.08+Math.min(c,i)*.055)+")"} strokeWidth={4+i*5} strokeLinecap="round"/>)}
