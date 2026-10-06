@@ -2,12 +2,14 @@ name: Render Attention V4.3 55 Rules
 
 on:
   push:
-    branches: [v4-3-55-rules]
+    branches: [main]
     paths:
       - 'src/v43-film.tsx'
       - 'src/v43-index.tsx'
       - 'scripts/make_audio_v43.py'
       - 'v43-motion-plan.json'
+      - 'director/v43-director-preview.html'
+      - 'docs/v43-55-rules.md'
       - '.github/workflows/render-v43.yml'
       - 'package.json'
   workflow_dispatch:
@@ -15,7 +17,7 @@ on:
 jobs:
   render:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
 
@@ -29,6 +31,23 @@ jobs:
           sudo apt-get install -y fonts-noto-cjk ffmpeg
           npm install --no-audit --no-fund
 
+      - name: Hard-rule structural checks
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('src/v43-film.tsx').read_text(encoding='utf-8')
+          forbidden=['ContinuityBridge','CarrierContinuity','MicroShake','seconds=[8','starts=[']
+          bad=[x for x in forbidden if x in s]
+          assert not bad, f'Forbidden V4.1/V4.2 patterns found: {bad}'
+          required=['QuietBadge','SignalCarrier','AuctionWorkCarrier','NetworkTrackFork','ChoicePaperCarrier','FinalGrowth']
+          missing=[x for x in required if x not in s]
+          assert not missing, f'Missing V4.3 directing structures: {missing}'
+          plan=Path('v43-motion-plan.json').read_text(encoding='utf-8')
+          for token in ['"fixed_8_second_pages": false','"generic_transition_overlay": false','"real_quiet_holds": true','"encoded_mp4_must_be_checked": true']:
+              assert token in plan, f'Missing hard-rule plan token: {token}'
+          print('V4.3 P0 structural gate passed')
+          PY
+
       - name: Generate V4.3 soundtrack
         run: python3 scripts/make_audio_v43.py public/v43-score.wav
 
@@ -38,7 +57,7 @@ jobs:
       - name: Render P0 rhythm proofs
         run: |
           mkdir -p out/v43-proofs
-          for pair in             "006.2:186"             "008.6:258"             "018.9:567"             "028.8:864"             "031.2:936"             "040.8:1224"             "051.8:1554"             "064.5:1935"             "077.2:2316"             "088.7:2661"             "090.5:2715"             "099.8:2994"             "108.0:3240"             "114.8:3444"             "118.8:3564"; do
+          for pair in             "006.2:186" "008.6:258" "018.9:567"             "028.8:864" "031.2:936" "040.8:1224"             "051.8:1554" "064.5:1935" "077.2:2316"             "088.7:2661" "090.5:2715" "099.8:2994"             "108.0:3240" "114.8:3444" "118.8:3564"; do
             name="${pair%%:*}"
             frame="${pair##*:}"
             npx remotion still src/v43-index.tsx AttentionV43 "out/v43-proofs/${name}s.png" --frame="${frame}" --image-format=png
@@ -66,7 +85,7 @@ jobs:
         run: |
           mkdir -p out/v43-encoded
           for t in 8.1 8.6 9.1 19.2 19.8 20.4 31.0 31.6 32.2 41.5 42.0 42.6 53.1 53.7 54.3 65.4 66.0 66.6 78.0 78.6 79.2 89.6 90.2 90.8 100.0 100.6 101.2 108.4 109.0 109.6 115.5 116.1 116.7; do
-            ffmpeg -y -ss "$t" -i out/attention-is-all-you-need-v4-3.mp4 -frames:v 1 "out/v43-encoded/${t}s.png"
+            ffmpeg -y -ss "$t" -i out/attention-is-all-you-need-v4-3.mp4 -frames:v 1 "out/v43-encoded/${t}s.png" >/dev/null 2>&1
           done
           ffmpeg -y -pattern_type glob -i 'out/v43-encoded/*.png'             -vf "scale=480:-1,tile=3x11:padding=6:margin=6:color=0x050709"             -frames:v 1 out/v43-encoded-boundaries.jpg
 
@@ -84,4 +103,6 @@ jobs:
             out/v43-encoded/*.png
             out/v43-media-info.json
             v43-motion-plan.json
+            director/v43-director-preview.html
+            docs/v43-55-rules.md
           retention-days: 7
