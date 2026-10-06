@@ -1,0 +1,200 @@
+{
+  "title": "注意力，就是你全部需要的 · V3 Cinematic",
+  "duration_s": 120,
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "required_major_transitions": 4,
+  "chapters": [
+    {
+      "id": 1,
+      "start": 0,
+      "end": 8,
+      "purpose": "用真实媒体卡片形成信息洪流，建立“海量输入→极少数被选中”的观看承诺"
+    },
+    {
+      "id": 2,
+      "start": 8,
+      "end": 16,
+      "purpose": "数字分段爆涨并被光阑压缩，10 的 0 变成下一镜入口"
+    },
+    {
+      "id": 3,
+      "start": 16,
+      "end": 24,
+      "purpose": "目标/显著性/经验等过滤层让信息逐级改变优先级"
+    },
+    {
+      "id": 4,
+      "start": 24,
+      "end": 32,
+      "purpose": "注意盲视：观众被跟焦任务占住，意外人物横穿而被忽略"
+    },
+    {
+      "id": 5,
+      "start": 32,
+      "end": 40,
+      "purpose": "搜索灯在同一空间跳转，表现主动寻找会改变显著性"
+    },
+    {
+      "id": 6,
+      "start": 40,
+      "end": 48,
+      "purpose": "通知/情绪/新奇/奖励竞拍下一秒注意力"
+    },
+    {
+      "id": 7,
+      "start": 48,
+      "end": 56,
+      "purpose": "多任务窗口抢前景并留下未完成痕迹"
+    },
+    {
+      "id": 8,
+      "start": 56,
+      "end": 64,
+      "purpose": "意识窄桥：大量后台信号只有少数进入主通道"
+    },
+    {
+      "id": 9,
+      "start": 64,
+      "end": 72,
+      "purpose": "被注意的信号结晶成可再次访问的记忆网络"
+    },
+    {
+      "id": 10,
+      "start": 72,
+      "end": 80,
+      "purpose": "重复选择把浅痕压成轨道"
+    },
+    {
+      "id": 11,
+      "start": 80,
+      "end": 88,
+      "purpose": "轨道分叉为两类长期路径"
+    },
+    {
+      "id": 12,
+      "start": 88,
+      "end": 96,
+      "purpose": "信息矩阵中的一个格子被不断放大直到占满世界"
+    },
+    {
+      "id": 13,
+      "start": 96,
+      "end": 104,
+      "purpose": "用翻开的纸面转入主动设计环境"
+    },
+    {
+      "id": 14,
+      "start": 104,
+      "end": 112,
+      "purpose": "一天的注意力碎片被重新整理成连续块"
+    },
+    {
+      "id": 15,
+      "start": 112,
+      "end": 120,
+      "purpose": "所有路径汇成生长结构，回收标题与结论"
+    }
+  ],
+  "major_events": [
+    {
+      "id": "E1",
+      "start": 0,
+      "end": 8,
+      "physical_family": "depth-stream-and-selection",
+      "carrier": "媒体卡片与金色流线",
+      "source_state": "大量卡片从空间深处/画外高速掠过",
+      "target_state": "极少数卡片绕意识核心稳定，其余失焦离场",
+      "meaning": "信息不是排版，而是在同一空间里发生筛选"
+    },
+    {
+      "id": "E2",
+      "start": 8,
+      "end": 16,
+      "physical_family": "compression-aperture-portal",
+      "carrier": "数字与光阑",
+      "source_state": "数字从1分段加速至10^9量级",
+      "target_state": "数字被压缩为10，0扩成空间入口",
+      "meaning": "把抽象的信息瓶颈做成可见的受力过程"
+    },
+    {
+      "id": "E3",
+      "start": 40,
+      "end": 56,
+      "physical_family": "auction-and-stack-impact",
+      "carrier": "下一秒核心与任务窗口",
+      "source_state": "多个刺激围绕中心竞价",
+      "target_state": "胜者撞入中心并成为下一场窗口",
+      "meaning": "竞争不是说明，而是对象真的争夺同一个位置"
+    },
+    {
+      "id": "E4",
+      "start": 72,
+      "end": 88,
+      "physical_family": "groove-to-branch",
+      "carrier": "金色轨迹/小球",
+      "source_state": "重复经过只留下浅痕",
+      "target_state": "轨迹加深并在同一几何体上分叉",
+      "meaning": "重复注意将选择变成更容易再次进入的路径"
+    }
+  ],
+  "captions": [
+    {
+      "text": "绝大多数信息，只是路过。",
+      "start": 1.2,
+      "end": 7.4,
+      "style": "scan",
+      "entry_s": 0.5,
+      "exit_s": 0.4
+    },
+    {
+      "text": "海量输入，不会变成海量意识。",
+      "start": 9,
+      "end": 14.8,
+      "style": "compression",
+      "entry_s": 0.55,
+      "exit_s": 0.35
+    },
+    {
+      "text": "目标、显著性、经验，会改变什么被放大。",
+      "start": 17,
+      "end": 23,
+      "style": "scan",
+      "entry_s": 0.5,
+      "exit_s": 0.4
+    },
+    {
+      "text": "注意被任务占住时，显眼的东西也可能没有进入你的世界。",
+      "start": 25,
+      "end": 31.5,
+      "style": "impact",
+      "entry_s": 0.5,
+      "exit_s": 0.4
+    }
+  ],
+  "silence_intervals": [],
+  "allowed_static_holds": [],
+  "sources": [
+    {
+      "claim": "高层行为吞吐量约10 bit/s；感官输入可达约10^9 bit/s量级，作为量级讨论而非‘全脑只有10 bit/s’",
+      "url": "https://doi.org/10.1016/j.neuron.2024.11.008",
+      "year": 2025,
+      "scope": "量级示意"
+    },
+    {
+      "claim": "专注任务可能导致对显著意外事件的注意盲视",
+      "url": "https://doi.org/10.1068/p281059",
+      "year": 1999,
+      "scope": "经典注意盲视实验"
+    }
+  ],
+  "additional_on_screen_text": [
+    "ATTENTION / SIGNAL SELECTION",
+    "10,000+",
+    "100",
+    "1",
+    "INPUT SURGE",
+    "INPUT / COMPRESSION"
+  ]
+}
