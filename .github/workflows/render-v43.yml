@@ -1,0 +1,104 @@
+name: Render Attention V4.3 55 Rules
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/v43-film.tsx'
+      - 'src/v43-index.tsx'
+      - 'scripts/make_audio_v43.py'
+      - 'director/v43-director-preview.html'
+      - '.github/workflows/render-v43.yml'
+      - 'package.json'
+  workflow_dispatch:
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk ffmpeg
+          npm install --no-audit --no-fund
+
+      - name: Hard-rule structural checks
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('src/v43-film.tsx').read_text(encoding='utf-8')
+          forbidden=['ContinuityBridge','CarrierContinuity','MicroShake','seconds=[8','starts=[']
+          bad=[x for x in forbidden if x in s]
+          assert not bad, f'Forbidden V4.1/V4.2 patterns found: {bad}'
+          required=['QuietBadge','SignalCarrier','AuctionWorkCarrier','NetworkTrackFork','ChoicePaperCarrier','FinalGrowth']
+          miss=[x for x in required if x not in s]
+          assert not miss, f'Missing V4.3 directing structures: {miss}'
+          print('V4.3 structure gate passed')
+          PY
+
+      - name: Generate V4.3 soundtrack
+        run: python3 scripts/make_audio_v43.py public/v43-score.wav
+
+      - name: Verify composition
+        run: npx remotion compositions src/v43-index.tsx
+
+      - name: Render critical transition windows
+        run: |
+          mkdir -p out/windows
+          npx remotion render src/v43-index.tsx AttentionV43 out/windows/01-card-to-crowd.mp4 --codec=h264 --crf=18 --concurrency=2 --frames=504-651
+          npx remotion render src/v43-index.tsx AttentionV43 out/windows/02-search-to-work.mp4 --codec=h264 --crf=18 --concurrency=2 --frames=1170-1350
+          npx remotion render src/v43-index.tsx AttentionV43 out/windows/03-network-to-track.mp4 --codec=h264 --crf=18 --concurrency=2 --frames=2235-2415
+          npx remotion render src/v43-index.tsx AttentionV43 out/windows/04-fork-matrix-paper.mp4 --codec=h264 --crf=18 --concurrency=2 --frames=2955-3330
+          npx remotion render src/v43-index.tsx AttentionV43 out/windows/05-paper-growth-ending.mp4 --codec=h264 --crf=18 --concurrency=2 --frames=3405-3599
+
+      - name: Render director proof frames
+        run: |
+          mkdir -p out/proofs
+          for pair in             "004.8:144" "007.0:210"             "008.5:255" "018.8:564" "020.2:606"             "027.2:816" "028.8:864"             "040.2:1206" "042.1:1263" "044.2:1326"             "051.1:1533" "054.0:1620" "063.8:1914"             "066.1:1983" "076.8:2304" "078.7:2361"             "088.5:2655" "091.0:2730" "092.2:2766" "099.3:2979"             "100.8:3024" "107.5:3225" "109.2:3276"             "114.6:3438" "116.2:3486" "118.5:3555" "119.6:3588"; do
+            name="${pair%%:*}"
+            frame="${pair##*:}"
+            npx remotion still src/v43-index.tsx AttentionV43 "out/proofs/${name}s.png" --frame="${frame}" --image-format=png
+          done
+
+      - name: Proof contact sheet
+        run: |
+          ffmpeg -y -pattern_type glob -i 'out/proofs/*.png'             -vf "scale=480:-1,tile=3x9:padding=7:margin=7:color=0x050709"             -frames:v 1 out/v43-proof-contact.jpg
+
+      - name: Render V4.3 MP4
+        run: |
+          npx remotion render src/v43-index.tsx AttentionV43 out/attention-is-all-you-need-v4-3.mp4             --codec=h264 --crf=17 --concurrency=2
+
+      - name: Media checks
+        run: |
+          ffprobe -v error             -show_entries format=duration,size             -show_entries stream=codec_name,width,height,r_frame_rate             -of json out/attention-is-all-you-need-v4-3.mp4 | tee out/v43-media-info.json
+          ffmpeg -v error -i out/attention-is-all-you-need-v4-3.mp4 -f null -
+
+      - name: Extract final encoded evidence
+        run: |
+          mkdir -p out/final-evidence
+          for ts in 7.0 8.5 18.8 20.2 27.2 28.8 40.2 42.1 44.2 51.1 54.0 63.8 66.1 76.8 78.7 88.5 91.0 92.2 99.3 100.8 107.5 109.2 114.6 116.2 118.5 119.6; do
+            ffmpeg -y -ss "${ts}" -i out/attention-is-all-you-need-v4-3.mp4 -frames:v 1 "out/final-evidence/${ts}s.png" >/dev/null 2>&1
+          done
+          ffmpeg -y -pattern_type glob -i 'out/final-evidence/*.png'             -vf "scale=480:-1,tile=3x9:padding=7:margin=7:color=0x050709"             -frames:v 1 out/v43-final-contact.jpg
+
+      - name: Upload V4.3
+        uses: actions/upload-artifact@v4
+        with:
+          name: attention-v4-3-55-rules
+          path: |
+            out/attention-is-all-you-need-v4-3.mp4
+            out/windows/*.mp4
+            out/v43-proof-contact.jpg
+            out/proofs/*.png
+            out/v43-final-contact.jpg
+            out/final-evidence/*.png
+            out/v43-media-info.json
+            director/v43-director-preview.html
+          retention-days: 7
