@@ -1,4 +1,4 @@
-name: Render Attention Film
+name: Render Attention V2 Preview
 
 on:
   push:
@@ -6,60 +6,39 @@ on:
   workflow_dispatch:
 
 jobs:
-  render:
+  preview:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 45
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      - name: Install Chinese fonts
+      - name: Install runtime
         run: |
           sudo apt-get update
           sudo apt-get install -y fonts-noto-cjk ffmpeg
-
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
-
+          npm install --no-audit --no-fund
       - name: Generate soundtrack
         run: python3 scripts/make_audio.py public/score.wav
-
-      - name: Verify composition
-        run: npx remotion compositions src/index.tsx
-
-      - name: Render keyframes
+      - name: Verify V2
+        run: npx remotion compositions src/v2-index.tsx
+      - name: Render V2 keyframes
         run: |
-          mkdir -p out/keyframes
-          for pair in "003:90" "011:330" "019:570" "027:810" "035:1050" "047:1410" "067:2010" "089:2670" "101:3030" "116:3480"; do
+          mkdir -p out/v2-keyframes
+          for pair in "003:90" "011:330" "019:570" "027:810" "035:1050" "043:1290" "059:1770" "075:2250" "091:2730" "107:3210" "116:3480"; do
             name="${pair%%:*}"
             frame="${pair##*:}"
-            npx remotion still src/index.tsx Attention "out/keyframes/${name}s.png" --frame="${frame}" --image-format=png
+            npx remotion still src/v2-index.tsx AttentionV2 "out/v2-keyframes/${name}s.png" --frame="${frame}" --image-format=png
           done
-
-      - name: Build keyframe contact sheet
+      - name: Contact sheet
         run: |
-          ffmpeg -y -pattern_type glob -i 'out/keyframes/*.png'             -vf "scale=768:-1,tile=2x5:padding=8:margin=8:color=0x111111"             -frames:v 1 out/keyframes-contact-sheet.jpg
-
-      - name: Render MP4
-        run: npx remotion render src/index.tsx Attention out/attention-is-all-you-need.mp4 --codec=h264 --crf=17 --concurrency=2
-
-      - name: Media checks
-        run: |
-          ffprobe -v error -show_entries format=duration,size -show_entries stream=codec_name,width,height,r_frame_rate -of json out/attention-is-all-you-need.mp4 | tee out/media-info.json
-          ffmpeg -v error -i out/attention-is-all-you-need.mp4 -f null -
-
-      - name: Upload artifacts
+          ffmpeg -y -pattern_type glob -i 'out/v2-keyframes/*.png'             -vf "scale=768:-1,tile=2x6:padding=8:margin=8:color=0x111111"             -frames:v 1 out/v2-contact-sheet.jpg
+      - name: Upload preview
         uses: actions/upload-artifact@v4
         with:
-          name: attention-film
+          name: attention-v2-preview
           path: |
-            out/attention-is-all-you-need.mp4
-            out/keyframes-contact-sheet.jpg
-            out/keyframes/*.png
-            out/media-info.json
+            out/v2-contact-sheet.jpg
+            out/v2-keyframes/*.png
           retention-days: 7
