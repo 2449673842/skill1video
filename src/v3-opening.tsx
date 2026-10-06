@@ -436,14 +436,23 @@ export const V3Scene1:React.FC=()=>{
   const collapse=phase(f,106,168);
   const lock=phase(f,150,193);
   const portal=phase(f,188,239);
+  const entry=phase(f,0,34);
+  // Continue the outgoing portal from Scene 0 instead of visually restarting at the cut.
+  // Scene 0 ends around x=1615; the Scene 1 aperture lives at x=1050, so the
+  // whole mechanism inherits that screen position and settles left over ~1.1s.
+  const carryX=lerp(565,0,entry);
+  const carryScale=lerp(1.24,1,entry);
+  const carryBlur=lerp(1.6,0,entry);
   const aperture=interpolate(f,[0,95,165],[260,142,54],{extrapolateLeft:"clamp",extrapolateRight:"clamp"});
   const milestoneShake=[30,51,73,96,121,160].reduce((m,e)=>{const d=f-e;return d>=0&&d<10?Math.max(m,(1-d/10)):m;},0);
   const shakeAmp=(f>156&&f<167?interpolate(f,[156,167],[9,0]):0)+milestoneShake*5;
   const sx=Math.sin(f*2.7)*shakeAmp,sy=Math.cos(f*2.2)*shakeAmp*.55;
   return <Stage bokeh={false}>
     <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 58% 50%,#172225 0%,#070A0C 40%,#020304 100%)"}}/>
-    <Kicker>INPUT / COMPRESSION</Kicker>
-    <div style={{position:"absolute",inset:0,transform:"translate("+sx+"px,"+sy+"px) scale("+(1+portal*.32)+")",transformOrigin:"57% 51%"}}>
+    <div style={{opacity:intro(f,18,20)}}><Kicker>INPUT / COMPRESSION</Kicker></div>
+    <div style={{position:"absolute",inset:0,
+      transform:"translate("+(carryX+sx)+"px,"+sy+"px) scale("+(carryScale*(1+portal*.32))+")",
+      transformOrigin:"57% 51%",filter:"blur("+carryBlur+"px)"}}>
       <FunnelParticles p={input} collapse={collapse}/>
       <svg width={W} height={H} style={{position:"absolute",inset:0}}>
         {Array.from({length:16}).map((_,i)=>{
