@@ -1,4 +1,4 @@
-name: Render Attention V2 Preview
+name: Render Attention V2 Final
 
 on:
   push:
@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  preview:
+  render:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -34,11 +34,19 @@ jobs:
       - name: Contact sheet
         run: |
           ffmpeg -y -pattern_type glob -i 'out/v2-keyframes/*.png'             -vf "scale=768:-1,tile=2x6:padding=8:margin=8:color=0x111111"             -frames:v 1 out/v2-contact-sheet.jpg
-      - name: Upload preview
+      - name: Render V2 MP4
+        run: npx remotion render src/v2-index.tsx AttentionV2 out/attention-is-all-you-need-v2.mp4 --codec=h264 --crf=17 --concurrency=2
+      - name: Media checks
+        run: |
+          ffprobe -v error -show_entries format=duration,size -show_entries stream=codec_name,width,height,r_frame_rate -of json out/attention-is-all-you-need-v2.mp4 | tee out/v2-media-info.json
+          ffmpeg -v error -i out/attention-is-all-you-need-v2.mp4 -f null -
+      - name: Upload final
         uses: actions/upload-artifact@v4
         with:
-          name: attention-v2-preview
+          name: attention-v2-final
           path: |
+            out/attention-is-all-you-need-v2.mp4
             out/v2-contact-sheet.jpg
             out/v2-keyframes/*.png
+            out/v2-media-info.json
           retention-days: 7
