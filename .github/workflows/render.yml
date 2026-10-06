@@ -3,6 +3,15 @@ name: Render Attention V2 Final
 on:
   push:
     branches: [main]
+    paths:
+      - 'src/v2-index.tsx'
+      - 'src/v2-common.tsx'
+      - 'src/v2-scenes-a.tsx'
+      - 'src/v2-scenes-b.tsx'
+      - 'src/v2-scenes-c.tsx'
+      - 'scripts/make_audio.py'
+      - '.github/workflows/render.yml'
+      - 'package.json'
   workflow_dispatch:
 
 jobs:
