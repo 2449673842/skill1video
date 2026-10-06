@@ -7,143 +7,133 @@ DUR = 120.0
 N = int(SR * DUR)
 os.makedirs(os.path.dirname(OUT) or ".", exist_ok=True)
 
-# V4.3 score contract:
-# - no fixed 8-second accents
-# - quiet windows are intentional
-# - hits belong to story events, not scene boundaries
-# - low-density ambience under reading/settle moments
+# V4.3: event-led soundtrack. No 8-second scene clock.
+# Motion density rises only around meaningful visual events and truly ducks
+# inside authored reading/settle windows.
 random.seed(43)
 
-EVENTS = [
-    (8.45, "filter", 64),
-    (19.90, "handoff", 58),
-    (27.15, "reveal", 52),
-    (42.05, "focus", 61),
-    (53.85, "winner", 57),
-    (66.05, "link", 49),
-    (78.55, "groove", 55),
-    (92.05, "fork", 47),
-    (100.75, "hijack", 50),
-    (109.10, "paper", 60),
-    (116.15, "growth", 67),
-    (118.40, "ending", 44),
+quiet = [
+    (28.4,31.5),
+    (40.0,42.0),
+    (51.0,53.5),
+    (63.5,66.0),
+    (76.6,78.5),
+    (87.8,91.0),
+    (99.2,100.5),
+    (107.4,109.0),
+    (114.2,116.0),
+    (118.25,120.0),
 ]
-
-QUIET = [
-    (5.8, 7.4),
-    (17.6, 19.2),
-    (28.3, 31.2),
-    (39.9, 41.5),
-    (50.8, 53.2),
-    (63.2, 65.7),
-    (76.2, 78.2),
-    (88.0, 91.0),
-    (98.7, 100.4),
-    (107.0, 108.8),
-    (113.6, 116.0),
-    (118.7, 120.0),
+events = [
+    (8.55, 62),
+    (18.55, 70),
+    (26.95, 52),
+    (31.75, 59),
+    (41.85, 65),
+    (53.55, 57),
+    (64.95, 49),
+    (75.85, 61),
+    (78.85, 55),
+    (91.05, 48),
+    (97.35, 67),
+    (100.45, 45),
+    (108.75, 52),
+    (116.05, 58),
+    (118.25, 72),
 ]
-
-# Atmosphere changes only at meaningful sections, not evenly.
-HARMONY = [
-    (0.0, (82.41, 123.47, 164.81)),
-    (20.0, (73.42, 110.00, 146.83)),
-    (42.0, (92.50, 138.59, 185.00)),
-    (66.0, (98.00, 146.83, 196.00)),
-    (90.0, (82.41, 123.47, 164.81)),
-    (109.0, (110.00, 164.81, 220.00)),
-    (116.0, (123.47, 185.00, 246.94)),
+active_windows = [
+    (0.4,3.2),
+    (8.5,18.6),
+    (22.5,27.6),
+    (31.8,40.0),
+    (42.0,51.0),
+    (56.6,63.5),
+    (66.0,76.4),
+    (78.8,87.6),
+    (91.0,99.2),
+    (100.5,107.3),
+    (109.0,114.1),
+    (116.0,118.2),
 ]
 
 def clamp(x,a=0.0,b=1.0):
     return max(a,min(b,x))
 
-def smoother(x):
+def smooth(x):
     x=clamp(x)
-    return x*x*x*(x*(x*6-15)+10)
+    return x*x*(3-2*x)
 
 def tone(freq,t,phase=0.0):
     return math.sin(2*math.pi*freq*t+phase)
 
-def chord_at(t):
-    current=HARMONY[0][1]
-    for ts,ch in HARMONY:
-        if t>=ts:
-            current=ch
-        else:
-            break
-    return current
+def in_any(t, windows):
+    return any(a <= t <= b for a,b in windows)
 
 def quiet_gain(t):
     g=1.0
-    for a,b in QUIET:
-        if a<=t<=b:
-            edge=0.45
-            fi=smoother((t-a)/edge)
-            fo=smoother((b-t)/edge)
-            # settle windows are quieter, but not dead unless final ending
-            floor=0.14 if b<118.7 else 0.06
-            g=min(g, floor+(1-floor)*(1-min(fi,fo)))
+    for a,b in quiet:
+        if a <= t <= b:
+            edge=min(smooth((t-a)/0.42),smooth((b-t)/0.42))
+            g=min(g,1.0-0.92*edge)
     return g
-
-def event_sound(t):
-    s=0.0
-    for mark,kind,base in EVENTS:
-        d=t-mark
-        # Pre-riser only for transitions that need anticipation.
-        if kind in ("handoff","focus","paper","growth") and -0.38<d<0:
-            u=(d+0.38)/0.38
-            env=math.sin(math.pi*clamp(u))**2
-            noise=math.sin((t*313.7+mark)*15.7)*math.sin((t*89.3+mark)*27.2)
-            s += 0.040*env*noise
-        if 0<=d<0.42:
-            env=math.exp(-d*(8.5 if kind!="ending" else 5.8))
-            s += 0.070*env*tone(base,t,0.2)
-            s += 0.020*env*tone(base*5.0,t,0.7)
-        if kind=="reveal" and 0<=d<0.7:
-            env=math.exp(-d*5.5)
-            s += 0.025*env*math.sin(2*math.pi*(base*1.7)*t)
-    return s
 
 with wave.open(OUT,"wb") as wf:
     wf.setnchannels(2)
     wf.setsampwidth(2)
     wf.setframerate(SR)
     block=bytearray()
+
     for i in range(N):
         t=i/SR
-        chord=chord_at(t)
 
-        # Long, slow bed. No beat grid.
-        slow=0.78+0.12*math.sin(2*math.pi*t/23.0)+0.08*math.sin(2*math.pi*t/37.0+0.8)
+        # Very slow bed: no rhythmic pumping, no scene-boundary reset.
+        drift=0.5+0.5*math.sin(2*math.pi*t/37.0)
+        root=73.42 + 8.0*math.sin(2*math.pi*t/53.0)
         pad=(
-            0.45*tone(chord[0],t,0.25)+
-            0.30*tone(chord[1],t,1.10)+
-            0.19*tone(chord[2],t,2.05)+
-            0.11*tone(chord[0]/2,t,0.55)
-        )*0.18*slow
+            .48*tone(root,t,.3)+
+            .28*tone(root*1.5,t,1.1)+
+            .16*tone(root*2.0,t,2.0)+
+            .10*tone(root*.5,t,.8)
+        )*(.030+.014*drift)
 
-        # Sparse motion texture only in actual moving sections.
-        texture=0.0
-        motion_windows=[
-            (8.2,18.9),(22.0,27.1),(31.7,39.7),(42.0,50.4),
-            (54.0,63.0),(66.0,75.9),(78.4,87.6),(91.0,98.4),
-            (100.6,106.8),(109.0,113.4),(116.0,118.5)
-        ]
-        if any(a<=t<=b for a,b in motion_windows):
-            wob=0.5+0.5*math.sin(2*math.pi*t/3.7)
-            texture=0.018*wob*(tone(187.0,t,0.3)+0.45*tone(263.0,t,1.4))
+        # Momentum exists only inside authored action windows.
+        pulse=0.0
+        if in_any(t,active_windows):
+            local=(t*0.57)%1.0
+            if local<.085:
+                env=math.exp(-local*34.0)
+                pulse=.030*env*(tone(48,t)+.25*tone(72,t))
 
-        sample=(pad+texture+event_sound(t))*quiet_gain(t)
+        # Pre-sound + impact only at story events.
+        fx=0.0
+        for mark,base in events:
+            d=t-mark
+            if -.32<d<0:
+                u=(d+.32)/.32
+                env=math.sin(math.pi*clamp(u))
+                noise=math.sin((t*367.0+mark)*13.7)*math.sin((t*91.0+mark)*27.1)
+                fx += .020*(env*env)*noise
+            if 0<=d<.30:
+                env=math.exp(-d*11.0)
+                fx += .050*env*tone(base,t,.2)
+                fx += .012*env*tone(base*6.5,t,.6)
 
-        # Gentle stereo drift, not synced to events.
-        pan=0.07*math.sin(2*math.pi*t/19.0)
+        q=quiet_gain(t)
+        sample=(pad+pulse+fx)*q
+
+        # Near the final line, remove pulses and let the tonal bed settle.
+        if t>=118.25:
+            sample=pad*q*.55
+
+        pan=.06*math.sin(2*math.pi*t/23.0)
         l=clamp(sample*(1-pan),-1,1)
         r=clamp(sample*(1+pan),-1,1)
         block += struct.pack("<hh",int(l*32767),int(r*32767))
+
         if len(block)>=65536:
             wf.writeframesraw(block)
             block.clear()
+
     if block:
         wf.writeframesraw(block)
 
