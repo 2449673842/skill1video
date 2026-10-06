@@ -1,4 +1,4 @@
-name: Render Attention V3 Cinematic
+name: Render Attention V4.1 Carrier Continuity
 
 on:
   push:
@@ -36,62 +36,58 @@ jobs:
         run: npx remotion compositions src/v3-index.tsx
       - name: Render opening proof frames
         run: |
-          mkdir -p out/v3-opening
-          for pair in "00.8:24" "01.6:48" "02.4:72" "03.2:96" "04.0:120" "04.8:144" "05.6:168" "06.4:192" "07.2:216" "08.8:264" "11.2:336" "15.0:450"; do
+          mkdir -p out/v4-1-opening
+          for pair in "00.8:24" "02.4:72" "04.8:144" "07.6:228" "08.0:240" "08.4:252" "15.6:468" "16.0:480" "16.4:492" "23.6:708" "24.0:720" "24.4:732"; do
             name="${pair%%:*}"
             frame="${pair##*:}"
-            npx remotion still src/v3-index.tsx AttentionV3 "out/v3-opening/${name}s.png" --frame="${frame}" --image-format=png
+            npx remotion still src/v3-index.tsx AttentionV3 "out/v4-1-opening/${name}s.png" --frame="${frame}" --image-format=png
           done
       - name: Opening contact sheet
         run: |
-          ffmpeg -y -pattern_type glob -i 'out/v3-opening/*.png'             -vf "scale=640:-1,tile=3x4:padding=8:margin=8:color=0x07090B"             -frames:v 1 out/v3-opening-contact.jpg
-      - name: Render opening 16s review
+          ffmpeg -y -pattern_type glob -i 'out/v4-1-opening/*.png' -vf "scale=640:-1,tile=3x4:padding=8:margin=8:color=0x07090B" -frames:v 1 out/v4-1-opening-contact.jpg
+      - name: Render first 40s review
         run: |
-          npx remotion render src/v3-index.tsx AttentionV3 out/attention-v3-opening-16s.mp4 --codec=h264 --crf=17 --concurrency=2 --frames=0-479
-      - name: Render 16-40s proof frames
+          npx remotion render src/v3-index.tsx AttentionV3 out/attention-v4-1-first-40s.mp4 --codec=h264 --crf=17 --concurrency=2 --frames=0-1199
+      - name: Render carrier boundary proofs
         run: |
-          mkdir -p out/v3-scenes-16-40
-          for pair in "16.8:504" "18.0:540" "19.6:588" "21.0:630" "22.8:684" "24.8:744" "26.0:780" "27.6:828" "29.2:876" "32.8:984" "35.0:1050" "38.0:1140"; do
+          mkdir -p out/v4-1-carriers
+          for pair in "032:960" "040:1200" "048:1440" "056:1680" "064:1920" "072:2160" "080:2400" "088:2640" "096:2880" "104:3120" "112:3360"; do
             name="${pair%%:*}"
             frame="${pair##*:}"
-            npx remotion still src/v3-index.tsx AttentionV3 "out/v3-scenes-16-40/${name}s.png" --frame="${frame}" --image-format=png
+            npx remotion still src/v3-index.tsx AttentionV3 "out/v4-1-carriers/${name}s.png" --frame="${frame}" --image-format=png
           done
-      - name: 16-40s contact sheet
+      - name: Carrier contact sheet
         run: |
-          ffmpeg -y -pattern_type glob -i 'out/v3-scenes-16-40/*.png'             -vf "scale=640:-1,tile=3x4:padding=8:margin=8:color=0x07090B"             -frames:v 1 out/v3-scenes-16-40-contact.jpg
-      - name: Render 16-40s review
-        run: |
-          npx remotion render src/v3-index.tsx AttentionV3 out/attention-v3-scenes-16-40s.mp4 --codec=h264 --crf=17 --concurrency=2 --frames=480-1199
+          ffmpeg -y -pattern_type glob -i 'out/v4-1-carriers/*.png' -vf "scale=640:-1,tile=3x4:padding=8:margin=8:color=0x07090B" -frames:v 1 out/v4-1-carrier-contact.jpg
       - name: Render full-film keyframes
         run: |
-          mkdir -p out/v3-keyframes
-          for pair in "003:90" "007:210" "011:330" "015:450" "019:570" "027:810" "043:1290" "059:1770" "075:2250" "091:2730" "107:3210" "116:3480"; do
+          mkdir -p out/v4-1-keyframes
+          for pair in "003:90" "011:330" "019:570" "027:810" "035:1050" "043:1290" "051:1530" "059:1770" "067:2010" "075:2250" "083:2490" "091:2730" "099:2970" "107:3210" "116:3480"; do
             name="${pair%%:*}"
             frame="${pair##*:}"
-            npx remotion still src/v3-index.tsx AttentionV3 "out/v3-keyframes/${name}s.png" --frame="${frame}" --image-format=png
+            npx remotion still src/v3-index.tsx AttentionV3 "out/v4-1-keyframes/${name}s.png" --frame="${frame}" --image-format=png
           done
       - name: Full contact sheet
         run: |
-          ffmpeg -y -pattern_type glob -i 'out/v3-keyframes/*.png'             -vf "scale=640:-1,tile=3x4:padding=7:margin=7:color=0x07090B"             -frames:v 1 out/v3-contact-sheet.jpg
-      - name: Render V3 MP4
-        run: npx remotion render src/v3-index.tsx AttentionV3 out/attention-is-all-you-need-v3.mp4 --codec=h264 --crf=17 --concurrency=2
+          ffmpeg -y -pattern_type glob -i 'out/v4-1-keyframes/*.png' -vf "scale=640:-1,tile=3x5:padding=7:margin=7:color=0x07090B" -frames:v 1 out/v4-1-contact-sheet.jpg
+      - name: Render V4.1 MP4
+        run: npx remotion render src/v3-index.tsx AttentionV3 out/attention-is-all-you-need-v4-1.mp4 --codec=h264 --crf=17 --concurrency=2
       - name: Media checks
         run: |
-          ffprobe -v error -show_entries format=duration,size -show_entries stream=codec_name,width,height,r_frame_rate -of json out/attention-is-all-you-need-v3.mp4 | tee out/v3-media-info.json
-          ffmpeg -v error -i out/attention-is-all-you-need-v3.mp4 -f null -
-      - name: Upload V3
+          ffprobe -v error -show_entries format=duration,size -show_entries stream=codec_name,width,height,r_frame_rate -of json out/attention-is-all-you-need-v4-1.mp4 | tee out/v4-1-media-info.json
+          ffmpeg -v error -i out/attention-is-all-you-need-v4-1.mp4 -f null -
+      - name: Upload V4.1
         uses: actions/upload-artifact@v4
         with:
-          name: attention-v3-cinematic
+          name: attention-v4-1-carrier-continuity
           path: |
-            out/attention-is-all-you-need-v3.mp4
-            out/attention-v3-opening-16s.mp4
-            out/attention-v3-scenes-16-40s.mp4
-            out/v3-scenes-16-40-contact.jpg
-            out/v3-scenes-16-40/*.png
-            out/v3-opening-contact.jpg
-            out/v3-opening/*.png
-            out/v3-contact-sheet.jpg
-            out/v3-keyframes/*.png
-            out/v3-media-info.json
+            out/attention-is-all-you-need-v4-1.mp4
+            out/attention-v4-1-first-40s.mp4
+            out/v4-1-opening-contact.jpg
+            out/v4-1-opening/*.png
+            out/v4-1-carrier-contact.jpg
+            out/v4-1-carriers/*.png
+            out/v4-1-contact-sheet.jpg
+            out/v4-1-keyframes/*.png
+            out/v4-1-media-info.json
           retention-days: 7
