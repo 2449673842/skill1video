@@ -1,4 +1,4 @@
-name: Render Attention V4.1 Carrier Continuity
+name: Render Attention V4.2 Directed Rhythm
 
 on:
   push:
@@ -30,64 +30,57 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y fonts-noto-cjk ffmpeg
           npm install --no-audit --no-fund
-      - name: Generate soundtrack
+
+      - name: Generate V4.2 soundtrack
         run: python3 scripts/make_audio.py public/score.wav
+
       - name: Verify composition
         run: npx remotion compositions src/v3-index.tsx
-      - name: Render opening proof frames
+
+      - name: Render rhythm proof frames
         run: |
-          mkdir -p out/v4-1-opening
-          for pair in "00.8:24" "02.4:72" "04.8:144" "07.6:228" "08.0:240" "08.4:252" "15.6:468" "16.0:480" "16.4:492" "23.6:708" "24.0:720" "24.4:732"; do
+          mkdir -p out/v4-2-rhythm
+          for pair in             "015.6:468" "016.2:486"             "024.8:744" "026.0:780"             "031.4:942" "032.2:966"             "050.3:1509" "051.1:1533"             "061.6:1848" "062.4:1872"             "079.0:2370" "079.8:2394"             "096.8:2904" "098.6:2958"             "100.6:3018" "108.7:3261"             "111.4:3342" "116.8:3504"; do
             name="${pair%%:*}"
             frame="${pair##*:}"
-            npx remotion still src/v3-index.tsx AttentionV3 "out/v4-1-opening/${name}s.png" --frame="${frame}" --image-format=png
+            npx remotion still src/v3-index.tsx AttentionV3 "out/v4-2-rhythm/${name}s.png" --frame="${frame}" --image-format=png
           done
-      - name: Opening contact sheet
+
+      - name: Rhythm contact sheet
         run: |
-          ffmpeg -y -pattern_type glob -i 'out/v4-1-opening/*.png' -vf "scale=640:-1,tile=3x4:padding=8:margin=8:color=0x07090B" -frames:v 1 out/v4-1-opening-contact.jpg
+          ffmpeg -y -pattern_type glob -i 'out/v4-2-rhythm/*.png'             -vf "scale=640:-1,tile=3x6:padding=7:margin=7:color=0x07090B"             -frames:v 1 out/v4-2-rhythm-contact.jpg
+
       - name: Render first 40s review
         run: |
-          npx remotion render src/v3-index.tsx AttentionV3 out/attention-v4-1-first-40s.mp4 --codec=h264 --crf=17 --concurrency=2 --frames=0-1199
-      - name: Render carrier boundary proofs
+          npx remotion render src/v3-index.tsx AttentionV3 out/attention-v4-2-first-40s.mp4             --codec=h264 --crf=17 --concurrency=2 --frames=0-1199
+
+      - name: Render middle rhythm review
         run: |
-          mkdir -p out/v4-1-carriers
-          for pair in "032:960" "040:1200" "048:1440" "056:1680" "064:1920" "072:2160" "080:2400" "088:2640" "096:2880" "104:3120" "112:3360"; do
-            name="${pair%%:*}"
-            frame="${pair##*:}"
-            npx remotion still src/v3-index.tsx AttentionV3 "out/v4-1-carriers/${name}s.png" --frame="${frame}" --image-format=png
-          done
-      - name: Carrier contact sheet
+          npx remotion render src/v3-index.tsx AttentionV3 out/attention-v4-2-middle-40s.mp4             --codec=h264 --crf=17 --concurrency=2 --frames=1200-2399
+
+      - name: Render final rhythm review
         run: |
-          ffmpeg -y -pattern_type glob -i 'out/v4-1-carriers/*.png' -vf "scale=640:-1,tile=3x4:padding=8:margin=8:color=0x07090B" -frames:v 1 out/v4-1-carrier-contact.jpg
-      - name: Render full-film keyframes
+          npx remotion render src/v3-index.tsx AttentionV3 out/attention-v4-2-final-40s.mp4             --codec=h264 --crf=17 --concurrency=2 --frames=2400-3599
+
+      - name: Render V4.2 MP4
         run: |
-          mkdir -p out/v4-1-keyframes
-          for pair in "003:90" "011:330" "019:570" "027:810" "035:1050" "043:1290" "051:1530" "059:1770" "067:2010" "075:2250" "083:2490" "091:2730" "099:2970" "107:3210" "116:3480"; do
-            name="${pair%%:*}"
-            frame="${pair##*:}"
-            npx remotion still src/v3-index.tsx AttentionV3 "out/v4-1-keyframes/${name}s.png" --frame="${frame}" --image-format=png
-          done
-      - name: Full contact sheet
-        run: |
-          ffmpeg -y -pattern_type glob -i 'out/v4-1-keyframes/*.png' -vf "scale=640:-1,tile=3x5:padding=7:margin=7:color=0x07090B" -frames:v 1 out/v4-1-contact-sheet.jpg
-      - name: Render V4.1 MP4
-        run: npx remotion render src/v3-index.tsx AttentionV3 out/attention-is-all-you-need-v4-1.mp4 --codec=h264 --crf=17 --concurrency=2
+          npx remotion render src/v3-index.tsx AttentionV3 out/attention-is-all-you-need-v4-2.mp4             --codec=h264 --crf=17 --concurrency=2
+
       - name: Media checks
         run: |
-          ffprobe -v error -show_entries format=duration,size -show_entries stream=codec_name,width,height,r_frame_rate -of json out/attention-is-all-you-need-v4-1.mp4 | tee out/v4-1-media-info.json
-          ffmpeg -v error -i out/attention-is-all-you-need-v4-1.mp4 -f null -
-      - name: Upload V4.1
+          ffprobe -v error             -show_entries format=duration,size             -show_entries stream=codec_name,width,height,r_frame_rate             -of json out/attention-is-all-you-need-v4-2.mp4 | tee out/v4-2-media-info.json
+          ffmpeg -v error -i out/attention-is-all-you-need-v4-2.mp4 -f null -
+
+      - name: Upload V4.2
         uses: actions/upload-artifact@v4
         with:
-          name: attention-v4-1-carrier-continuity
+          name: attention-v4-2-directed-rhythm
           path: |
-            out/attention-is-all-you-need-v4-1.mp4
-            out/attention-v4-1-first-40s.mp4
-            out/v4-1-opening-contact.jpg
-            out/v4-1-opening/*.png
-            out/v4-1-carrier-contact.jpg
-            out/v4-1-carriers/*.png
-            out/v4-1-contact-sheet.jpg
-            out/v4-1-keyframes/*.png
-            out/v4-1-media-info.json
+            out/attention-is-all-you-need-v4-2.mp4
+            out/attention-v4-2-first-40s.mp4
+            out/attention-v4-2-middle-40s.mp4
+            out/attention-v4-2-final-40s.mp4
+            out/v4-2-rhythm-contact.jpg
+            out/v4-2-rhythm/*.png
+            out/v4-2-media-info.json
           retention-days: 7
