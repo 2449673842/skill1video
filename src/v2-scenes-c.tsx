@@ -5,17 +5,18 @@ import {Stage,Kicker,Caption,GridFloor,RingMachine,FocusReticle,Paper,GlowLine,W
 export const V2Scene10:React.FC=()=>{
   const f=useCurrentFrame();
   const p=smooth(clamp((f-15)/180));
+  const sceneEntry=intro(f,8,18);
   return <Stage>
     <Kicker>LIFE FORK / TWO FUTURES</Kicker>
     <SplitTitle a="同样的一天，" b="可以被注意力长成两个世界。" y={105}/>
     <GridFloor opacity={.14} horizon={400}/>
-    <svg width={1920} height={1080} style={{position:"absolute",inset:0}}>
+    <svg width={1920} height={1080} style={{position:"absolute",inset:0,opacity:sceneEntry}}>
       <path d="M 250 790 C 600 720, 800 650, 930 610" fill="none" stroke="rgba(239,229,204,.22)" strokeWidth="8"/>
       <path d="M 930 610 C 1170 540, 1370 380, 1730 300" fill="none" stroke={GOLD2} strokeWidth="9" strokeLinecap="round"/>
       <path d="M 930 610 C 1180 700, 1380 830, 1740 860" fill="none" stroke="rgba(239,229,204,.24)" strokeWidth="9" strokeLinecap="round"/>
     </svg>
-    <div style={{position:"absolute",left:1210,top:250,fontSize:30,fontWeight:900,color:GOLD2}}>深度 / 创作 / 关系</div>
-    <div style={{position:"absolute",left:1210,top:865,fontSize:30,fontWeight:900,color:"rgba(239,229,204,.45)"}}>碎片 / 反应 / 刷新</div>
+    <div style={{position:"absolute",left:1210,top:250,fontSize:30,fontWeight:900,color:GOLD2,opacity:sceneEntry}}>深度 / 创作 / 关系</div>
+    <div style={{position:"absolute",left:1210,top:865,fontSize:30,fontWeight:900,color:"rgba(239,229,204,.45)",opacity:sceneEntry}}>碎片 / 反应 / 刷新</div>
     {Array.from({length:7}).map((_,i)=><div key={i} style={{position:"absolute",left:1150+i*82*p,top:445-i*18*p,width:56,height:56,borderRadius:12,
       background:i%2?GOLD2:"rgba(217,178,111,.18)",boxShadow:i%2?"0 0 18px rgba(217,178,111,.24)":"none",opacity:p}}/>)}
     {Array.from({length:14}).map((_,i)=><div key={"b"+i} style={{position:"absolute",left:1130+(i%7)*86*p,top:725+Math.floor(i/7)*78,width:68,height:44,borderRadius:8,
