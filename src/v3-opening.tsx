@@ -227,6 +227,36 @@ const HeadCore:React.FC<{x:number;y:number;scale:number;opacity:number;portal:nu
   </div>;
 };
 
+const ImpactRipple:React.FC<{f:number;events:number[];x:number;y:number;color?:string;maxR?:number}>=({f,events,x,y,color=GOLD2,maxR=280})=>{
+  return <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:118}}>
+    {events.flatMap((event,ei)=>Array.from({length:4}).map((_,i)=>{
+      const local=(f-event-i*5)/28;
+      const p=clamp(local);
+      const alive=local>=0&&local<=1;
+      const r=30+p*(maxR+i*42);
+      const a=(1-p)*(.48-i*.07);
+      const squash=1+.06*Math.sin(p*Math.PI);
+      return alive?<div key={ei+"-"+i} style={{
+        position:"absolute",left:x,top:y,width:r*2,height:r*2,
+        transform:"translate(-50%,-50%) scaleY("+squash+")",
+        borderRadius:"50%",border:(i===0?3:2)+"px solid "+color,
+        opacity:a,boxShadow:"0 0 "+(10+18*(1-p))+"px "+color+"55"
+      }}/>:null;
+    }))}
+  </div>;
+};
+
+const ScreenPulse:React.FC<{f:number;events:number[]}>=({f,events})=>{
+  const hit=events.reduce((m,e)=>{
+    const d=f-e;
+    if(d<0||d>16)return m;
+    return Math.max(m,(1-d/16)*Math.exp(-d*.05));
+  },0);
+  return <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:116,
+    boxShadow:"inset 0 0 "+(70+hit*95)+"px "+(18+hit*30)+"px rgba(255,122,73,"+(.05+hit*.14)+")",
+    opacity:hit}}/>;
+};
+
 const SelectionCounter:React.FC<{f:number}>=({f})=>{
   const value=selectionValue(f);
   const display=(f>=65&&f<91)?"10,000+":fmt(value);
@@ -278,9 +308,12 @@ export const V3Scene0:React.FC=()=>{
   const fade=phase(f,198,239);
   const camScale=interpolate(f,[0,70,150,239],[1.08,1.02,1.0,1.34],{extrapolateLeft:"clamp",extrapolateRight:"clamp",easing:Easing.inOut(Easing.cubic)});
   const camX=interpolate(f,[0,145,239],[28,0,-185],{extrapolateLeft:"clamp",extrapolateRight:"clamp"});
+  const hit=[68,142,176].reduce((m,e)=>{const d=f-e;return d>=0&&d<12?Math.max(m,(1-d/12)):m;},0);
+  const shakeX=Math.sin(f*2.9)*7*hit;
+  const shakeY=Math.cos(f*2.4)*4*hit;
   return <Stage warm bokeh={false}>
     <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 77% 52%,rgba(55,28,17,.54),transparent 30%),radial-gradient(circle at 40% 40%,#0E1A20 0%,#070B0F 42%,#020304 100%)"}}/>
-    <div style={{position:"absolute",inset:0,transform:"translateX("+camX+"px) scale("+camScale+")",transformOrigin:"72% 52%",perspective:1250,transformStyle:"preserve-3d"}}>
+    <div style={{position:"absolute",inset:0,transform:"translate("+(camX+shakeX)+"px,"+shakeY+"px) scale("+camScale+")",transformOrigin:"72% 52%",perspective:1250,transformStyle:"preserve-3d"}}>
       <FlowTrails filter={filter} portal={portal}/>
       <div style={{position:"absolute",inset:0,transformStyle:"preserve-3d"}}>
         {Array.from({length:44}).map((_,i)=><InfoTile key={i} i={i} stream={stream} filter={filter} portal={portal}/>)}
@@ -288,6 +321,8 @@ export const V3Scene0:React.FC=()=>{
       <div style={{position:"absolute",left:190,top:350,width:810,height:470,borderRadius:"50%",background:"radial-gradient(ellipse,rgba(3,5,7,.72),rgba(3,5,7,.15) 58%,transparent 78%)",pointerEvents:"none"}}/>
       <HeadCore x={1490+portal*125} y={565} scale={.86} opacity={.30+.70*stream} portal={portal}/>
       <SelectionCounter f={f}/>
+      <ImpactRipple f={f} events={[68,88,142,176]} x={590} y={600} color={GOLD2} maxR={300}/>
+      <ScreenPulse f={f} events={[68,142,176]}/>
     </div>
     <HeroTypography f={f} fade={fade}/>
     <div style={{position:"absolute",left:96,bottom:78,zIndex:120,opacity:1-fade}}>
@@ -363,7 +398,8 @@ export const V3Scene1:React.FC=()=>{
   const lock=phase(f,150,193);
   const portal=phase(f,188,239);
   const aperture=interpolate(f,[0,95,165],[260,142,54],{extrapolateLeft:"clamp",extrapolateRight:"clamp"});
-  const shakeAmp=f>156&&f<167?interpolate(f,[156,167],[9,0]):0;
+  const milestoneShake=[30,51,73,96,121,160].reduce((m,e)=>{const d=f-e;return d>=0&&d<10?Math.max(m,(1-d/10)):m;},0);
+  const shakeAmp=(f>156&&f<167?interpolate(f,[156,167],[9,0]):0)+milestoneShake*5;
   const sx=Math.sin(f*2.7)*shakeAmp,sy=Math.cos(f*2.2)*shakeAmp*.55;
   return <Stage bokeh={false}>
     <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 58% 50%,#172225 0%,#070A0C 40%,#020304 100%)"}}/>
@@ -385,6 +421,8 @@ export const V3Scene1:React.FC=()=>{
       </div>
       <CounterSurge f={f} collapse={collapse}/>
       <LockTen show={lock} portal={portal}/>
+      <ImpactRipple f={f} events={[30,51,73,96,121,160]} x={f<145?680:1075} y={f<145?575:552} color={f<145?ORANGE:GOLD2} maxR={f<145?240:360}/>
+      <ScreenPulse f={f} events={[121,160]}/>
     </div>
     <div style={{position:"absolute",right:98,top:118,width:650,opacity:intro(f,20,28)*(1-portal)}}>
       <div style={{fontSize:52,fontWeight:900,lineHeight:1.1}}>海量输入，<br/><span style={{color:GOLD2}}>不会变成海量意识。</span></div>
