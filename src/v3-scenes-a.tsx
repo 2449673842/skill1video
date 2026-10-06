@@ -152,7 +152,7 @@ export const V3Scene3:React.FC=()=>{
   const reveal=phase(f,154,184);
   const tx=interpolate(f,[0,58,115,170,239],[520,820,1080,1350,1510],{extrapolateRight:"clamp",easing:Easing.inOut(Easing.cubic)});
   const ty=interpolate(f,[0,58,115,170,239],[470,650,455,620,500],{extrapolateRight:"clamp",easing:Easing.inOut(Easing.cubic)});
-  const unexpectedX=interpolate(f,[38,150],[2010,-130],{extrapolateLeft:"clamp",extrapolateRight:"clamp",easing:Easing.inOut(Easing.cubic)});
+  const unexpectedX=interpolate(f,[38,150],[1840,360],{extrapolateLeft:"clamp",extrapolateRight:"clamp",easing:Easing.inOut(Easing.cubic)});
   const count=f<55?0:f<105?1:f<155?2:3;
   const freeze=phase(f,150,166);
   const crowd=Array.from({length:7*12});
@@ -178,7 +178,7 @@ export const V3Scene3:React.FC=()=>{
       <Person x={tx} y={ty} selected scale={.96}/>
       <Reticle x={tx} y={ty} r={66} opacity={1-reveal*.72}/>
       <Person x={unexpectedX} y={555} red scale={1.28} opacity={.36+.64*reveal}/>
-      <Ripple f={f} events={rippleEvent} x={interpolate(168,[0,239],[2010,-130],{extrapolateLeft:"clamp",extrapolateRight:"clamp"})} y={555} color={RED} maxR={310} layers={4} duration={38}/>
+      <Ripple f={f} events={rippleEvent} x={360} y={555} color={RED} maxR={310} layers={4} duration={38}/>
     </div>
     <div style={{position:"absolute",left:92,top:100,width:760}}>
       <div style={{fontSize:50,fontWeight:900}}>只盯住<span style={{color:GOLD2}}>金色的人</span>。</div>
