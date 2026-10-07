@@ -50,6 +50,9 @@
   .pane.ref .tag{color:var(--cyan);border:1px solid rgba(91,196,212,.35)}
   .pane.ren .tag{color:var(--gold);border:1px solid rgba(217,178,111,.4)}
   .pane img{width:100%;display:block}
+  .pane.ren{background:#0d1218;box-shadow:inset 0 0 0 1px rgba(217,178,111,.22)}
+  .pane.ren .loaded{position:absolute;right:12px;top:12px;z-index:5;font-size:10.5px;letter-spacing:1.6px;
+    color:var(--ok);background:rgba(2,3,5,.72);border:1px solid rgba(102,185,170,.4);border-radius:4px;padding:4px 9px}
   .placeholder{width:100%;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:10px;background:repeating-linear-gradient(45deg,#07090c 0 14px,#05070a 14px 28px);color:var(--dim2);font-size:13px}
   .placeholder .big{font-size:15px;color:var(--dim)}
@@ -134,6 +137,12 @@
 
   <div class="stage" id="stage"></div>
 
+  <section class="qa" id="galleryWrap" style="margin-top:22px;padding:16px 18px">
+    <h2 style="font-size:15px;letter-spacing:1px;color:var(--gold);margin-bottom:4px">六帧渲染总览 · 点击任意一帧进入对比</h2>
+    <div class="hint" style="font-size:12px;color:var(--dim2);margin-bottom:12px">Remotion 真实渲染（frame 96 · 1920×1080）· 左键选场景，双击看原图</div>
+    <div id="gallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
+  </section>
+
   <section class="qa">
     <h2 id="qaTitle">验收单 · A–J</h2>
     <div class="hint">不看文字内容时，两张图的整体视觉气质必须明显属于同一个画面系统。若 Render 明显像 UI dashboard 而 Reference 明显像电影 motion graphics —— 判定失败。</div>
@@ -186,7 +195,7 @@ SCENES.forEach((s,i)=>{
   d.onclick=()=>select(i);tabs.appendChild(d);
 });
 
-function select(i){cur=i;showRefInToggle=false;document.querySelectorAll(".tab").forEach((t,j)=>t.classList.toggle("active",j===i));
+function select(i){cur=i;showRefInToggle=false;document.querySelectorAll(".tab").forEach((t,j)=>t.classList.toggle("active",j===i));renderGallery();
   document.getElementById("qaTitle").textContent=`验收单 · ${SCENES[i].n} ${SCENES[i].en} · A–J`;
   document.getElementById("notes").value=state[i].notes;
   renderChecklist();renderStage();}
@@ -207,7 +216,7 @@ function renderStage(){
   if(mode==="sbs"){
     st.innerHTML=`<div class="sbs">
       <div class="pane ref"><span class="tag">REFERENCE · IMAGE 2.5</span>${rOK?`<img src="${refSrc()}" onerror="this.outerHTML=window.__phRef()">`:ph("ref")}</div>
-      <div class="pane ren"><span class="tag">REMOTION RENDER · STILL 96</span><img src="${renSrc()}" onerror="this.outerHTML=window.__phRen()"></div>
+      <div class="pane ren"><span class="tag">REMOTION RENDER · STILL 96</span><span class="loaded">LOADED · 1920×1080</span><img src="${renSrc()}" onerror="this.outerHTML=window.__phRen()"></div>
     </div>`;
   }else if(mode==="wipe"){
     st.innerHTML=`<div class="wipe" id="wipeBox">
@@ -228,7 +237,7 @@ function renderStage(){
     const useRef=showRefInToggle&&rOK;
     st.innerHTML=`<div class="pane ${useRef?"ref":"ren"}">
       <span class="tag">${useRef?"REFERENCE · IMAGE 2.5":"REMOTION RENDER · STILL 96"}</span>
-      <img src="${useRef?refSrc():renSrc()}" style="width:100%;display:block" onerror="this.outerHTML=window.__phRef()">
+      <img src="${useRef?refSrc():renSrc()}" style="width:100%;display:block" onerror="this.outerHTML=${useRef?'window.__phRef()':'window.__phRen()'}">
     </div>`;
   }
   document.getElementById("ovlCtl").style.display=(mode==="overlay"&&rOK)?"flex":"none";
@@ -270,6 +279,20 @@ function renderChecklist(){
   });
 }
 document.getElementById("notes").oninput=e=>state[cur].notes=e.target.value;
+
+/* gallery */
+function renderGallery(){
+  const g=document.getElementById("gallery");if(!g)return;g.innerHTML="";
+  SCENES.forEach((sc,i)=>{
+    const d=document.createElement("div");
+    d.style.cssText="position:relative;border:1px solid "+(i===cur?"var(--gold-d)":"var(--line)")+";border-radius:8px;overflow:hidden;cursor:pointer;background:#0d1218;transition:.15s";
+    d.innerHTML=`<img src="${REN_BASE}${sc.file}" style="width:100%;display:block" onerror="this.outerHTML='<div class=&quot;placeholder&quot;><div>渲染缺失</div></div>'">
+      <div style="position:absolute;left:0;right:0;bottom:0;padding:20px 10px 8px;background:linear-gradient(0deg,rgba(1,2,3,.88),transparent);font-size:12px;letter-spacing:1.5px;color:var(--cream)">${sc.n} · ${sc.en}<span style="float:right;color:var(--dim2)">1920×1080</span></div>`;
+    d.onclick=()=>select(i);
+    d.ondblclick=()=>openFS(`${REN_BASE}${sc.file}`,`${sc.n} ${sc.en} · 1920×1080`);
+    g.appendChild(d);
+  });
+}
 
 /* modes */
 document.querySelectorAll("#modeGrp button").forEach(b=>b.onclick=()=>{
