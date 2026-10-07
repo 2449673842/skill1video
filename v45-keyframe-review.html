@@ -139,7 +139,7 @@
 
   <section class="qa" id="galleryWrap" style="margin-top:22px;padding:16px 18px">
     <h2 style="font-size:15px;letter-spacing:1px;color:var(--gold);margin-bottom:4px">六帧渲染总览 · 点击任意一帧进入对比</h2>
-    <div class="hint" style="font-size:12px;color:var(--dim2);margin-bottom:12px">Remotion 真实渲染（frame 96 · 1920×1080）· 左键选场景，双击看原图</div>
+    <div class="hint" style="font-size:12px;color:var(--dim2);margin-bottom:12px">Remotion 真实渲染（frame 120 · 1920×1080）· 左键选场景，双击看原图</div>
     <div id="gallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
   </section>
 
@@ -152,7 +152,7 @@
 
   <section class="sheet">
     <h2 style="font-size:15px;letter-spacing:1px;color:var(--gold);margin-bottom:12px">六场景 Contact Sheet（Remotion 真实渲染拼图）</h2>
-    <img src="out/v45/v45_contact_sheet.png" alt="contact sheet" onerror="this.outerHTML='<div class=&quot;placeholder&quot; style=&quot;border:1px solid var(--line);border-radius:10px&quot;><div class=&quot;big\">contact sheet 未生成</div><div>运行 <code>npx remotion still src/v45/index.tsx V45ContactSheet out/v45/v45_contact_sheet.png --frame=96</code></div></div>'">
+    <img src="out/v45/v45_contact_sheet.png" alt="contact sheet" onerror="this.outerHTML='<div class=&quot;placeholder&quot; style=&quot;border:1px solid var(--line);border-radius:10px&quot;><div class=&quot;big\">contact sheet 未生成</div><div>运行 <code>npx remotion still src/v45/index.tsx V45ContactSheet out/v45/v45_contact_sheet.png --frame=120</code></div></div>'">
   </section>
 </main>
 
@@ -207,7 +207,7 @@ function ph(kind){ // placeholder html
   if(kind==="ref")return `<div class="placeholder"><div class="big">等待 Image 2.5 参考图</div>
     <div>把用户生成的关键帧放到 <code>${REF_BASE}${SCENES[cur].file}</code></div>
     <div>放好后刷新本页，对比 / wipe / overlay 立即生效</div></div>`;
-  return `<div class="placeholder"><div class="big">渲染图缺失</div><div>运行 <code>npx remotion still src/v45/index.tsx V45${SCENES[cur].en} ${REN_BASE}${SCENES[cur].file} --frame=96</code></div></div>`;
+  return `<div class="placeholder"><div class="big">渲染图缺失</div><div>运行 <code>npx remotion still src/v45/index.tsx V45${SCENES[cur].en} ${REN_BASE}${SCENES[cur].file} --frame=120</code></div></div>`;
 }
 
 function renderStage(){
@@ -216,7 +216,7 @@ function renderStage(){
   if(mode==="sbs"){
     st.innerHTML=`<div class="sbs">
       <div class="pane ref"><span class="tag">REFERENCE · IMAGE 2.5</span>${rOK?`<img src="${refSrc()}" onerror="this.outerHTML=window.__phRef()">`:ph("ref")}</div>
-      <div class="pane ren"><span class="tag">REMOTION RENDER · STILL 96</span><span class="loaded">LOADED · 1920×1080</span><img src="${renSrc()}" onerror="this.outerHTML=window.__phRen()"></div>
+      <div class="pane ren"><span class="tag">REMOTION RENDER · STILL 120</span><span class="loaded">LOADED · 1920×1080</span><img src="${renSrc()}" onerror="this.outerHTML=window.__phRen()"></div>
     </div>`;
   }else if(mode==="wipe"){
     st.innerHTML=`<div class="wipe" id="wipeBox">
@@ -236,7 +236,7 @@ function renderStage(){
   }else{ // toggle
     const useRef=showRefInToggle&&rOK;
     st.innerHTML=`<div class="pane ${useRef?"ref":"ren"}">
-      <span class="tag">${useRef?"REFERENCE · IMAGE 2.5":"REMOTION RENDER · STILL 96"}</span>
+      <span class="tag">${useRef?"REFERENCE · IMAGE 2.5":"REMOTION RENDER · STILL 120"}</span>
       <img src="${useRef?refSrc():renSrc()}" style="width:100%;display:block" onerror="this.outerHTML=${useRef?'window.__phRef()':'window.__phRen()'}">
     </div>`;
   }

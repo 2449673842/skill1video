@@ -22,7 +22,7 @@ if (typeof document !== "undefined") {
 export const W = 1920;
 export const H = 1080;
 export const FPS = 30;
-export const STILL_FRAME = 96;          // 所有审片静帧统一取此帧
+export const STILL_FRAME = 120;         // 所有审片静帧统一取此帧（文字全部到位的深度静止帧）
 export const SETTLE_AT = 60;            // 此帧之后画面必须真正静止
 
 /* ---- 调色板：同一个视觉宇宙 ---- */
@@ -391,11 +391,11 @@ export const HUDReticle: React.FC<{
 );
 
 export const KickerLine: React.FC<{
-  x?: number; y?: number; text: string; accent?: string; align?: "left" | "right";
-}> = ({ x = 84, y = 64, text, accent = "rgba(91,196,212,.66)", align = "left" }) => (
+  x?: number; y?: number; text: string; accent?: string; align?: "left" | "right"; opacity?: number;
+}> = ({ x = 84, y = 64, text, accent = "rgba(91,196,212,.66)", align = "left", opacity = 1 }) => (
   <div style={{
     position: "absolute", left: x, top: y, zIndex: 80, textAlign: align === "right" ? "right" : "left",
-    fontFamily: DISPLAY, fontSize: 17, fontWeight: 700, letterSpacing: 5.5, color: accent,
+    fontFamily: DISPLAY, fontSize: 17, fontWeight: 700, letterSpacing: 5.5, color: accent, opacity,
   }}>
     {text}
   </div>

@@ -109,8 +109,9 @@ export const V45Growth: React.FC = () => {
   const apexQ = outCubic(f, 0, 1, 66, 20);            // Main Event②：apex 点亮
   const ringsQ = outCubic(f, 0, 1, 70, 16);
   const acquire = outCubic(f, 0, 1, 74, 12);
-  const titleQ = outCubic(f, 0, 1, 40, 46);           // 巨字自下缘生长
-  const lateIn = outCubic(f, 0, 1, 70, 16);
+  const titleQ = outCubic(f, 0, 1, 82, 24);           // 命名节拍：apex 点亮后巨字自下缘生长
+  const kickerIn = outCubic(f, 0, 1, 80, 14);
+  const lateIn = outCubic(f, 0, 1, 100, 18);
   const dawnQ = outCubic(f, 0, 1, 0, 30);
   return (
     <CinemaFrame variant="dawn" glow={[50, 64]} glowColor="rgba(242,166,90,.22)">
@@ -186,8 +187,8 @@ export const V45Growth: React.FC = () => {
         opacity={0.8 * acquire} label="APEX · GROWTH 3.2×" />
 
       {/* 10 辅助排版 */}
-      <KickerLine text="PAGE / TIME / GROWTH" />
-      <SubText x={84} y={126} width={470} opacity={outCubic(f, 0, 1, 16, 26)}
+      <KickerLine text="PAGE / TIME / GROWTH" opacity={kickerIn} />
+      <SubText x={84} y={126} width={470} opacity={outCubic(f, 0, 1, 98, 18)}
         lines={<>被选中的那条路，长成结构：<br />
         一页页<span style={{ color: C.gold, fontWeight: 700 }}>时间</span>，长成一棵<span style={{ color: C.gold, fontWeight: 700 }}>树</span>。</>} />
 

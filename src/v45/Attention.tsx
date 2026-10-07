@@ -106,10 +106,11 @@ export const V45Attention: React.FC = () => {
   const spin = outCubic(f, 0, 1, 34, 44) * 64;     // 轨道旋转减速停住
   const ringIn = outCubic(f, 0, 1, 34, 24);
   const acquire = outCubic(f, 0, 1, 56, 20);       // Settle：HUD 捕获
-  const titleQ = outCubic(f, 0, 1, 12, 42);        // 巨字升起
-  const titleY = lerp(648, 588, titleQ);
+  const titleQ = outCubic(f, 0, 1, 78, 26);        // 命名节拍：动作停稳后巨字升起
+  const titleY = lerp(652, 588, titleQ);
   const flow = outCubic(f, 0, 1, 18, 46);          // 光路接通（虚线流动后停住）
-  const lateIn = outCubic(f, 0, 1, 62, 22);        // 辅助文案 / 角标
+  const kickerIn = outCubic(f, 0, 1, 74, 14);      // 章节微标随 settle 进入
+  const lateIn = outCubic(f, 0, 1, 96, 20);        // 阅读层：巨字落定后中文字幕才进入
   const fgIn = outCubic(f, 0, 1, 66, 20);
   const ignitePulse = pulseAt(f, 34, 8);           // 点火瞬间的 bloom 脉冲
   return (
@@ -194,7 +195,7 @@ export const V45Attention: React.FC = () => {
       </div>
 
       {/* 10 辅助排版 */}
-      <KickerLine text="ATTENTION / SIGNAL FLOOD" />
+      <KickerLine text="ATTENTION / SIGNAL FLOOD" opacity={kickerIn} />
       <SubText x={86} y={H - 176} width={560} opacity={lateIn}
         lines={<>每天约 <span style={{ color: C.gold, fontWeight: 700 }}>10⁹ bit</span> 的世界经过你。<br />
         真正进入意识的，不足 <span style={{ color: C.cyan, fontWeight: 700 }}>10 bit</span>。</>} />

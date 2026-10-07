@@ -107,8 +107,9 @@ export const V45Filter: React.FC = () => {
   const passQ = gates.map((g) => clamp((f - crossAt(g.t)) / 16 + 1)); // 门激活后的余量
   const gateIn = (i: number) => outCubic(f, 0, 1, 4 + i * 6, 22);    // 门升起
   const acquire = outCubic(f, 0, 1, 74, 12);
-  const titleQ = outCubic(f, 0, 1, 10, 34);
-  const lateIn = outCubic(f, 0, 1, 70, 16);
+  const titleQ = outCubic(f, 0, 1, 80, 24);        // 命名节拍：穿门停稳后
+  const kickerIn = outCubic(f, 0, 1, 76, 14);
+  const lateIn = outCubic(f, 0, 1, 98, 18);
   return (
     <CinemaFrame variant="cold" glow={[52, 48]} glowColor="rgba(14,30,40,.55)">
       {/* 06 地面网格 */}
@@ -172,7 +173,7 @@ export const V45Filter: React.FC = () => {
         opacity={0.8 * acquire} label="PASSING GATE 03 · SALIENCE" />
 
       {/* 10 辅助排版 */}
-      <KickerLine text="FILTER / LAYERED PRIORITY" />
+      <KickerLine text="FILTER / LAYERED PRIORITY" opacity={kickerIn} />
       <SubText x={W - 726} y={244} width={640} align="right" opacity={lateIn}
         lines={<>信息不是被动进入——<br />
         它要<span style={{ color: C.gold, fontWeight: 700 }}>穿过一层层优先级</span>，才能抵达你。</>} />

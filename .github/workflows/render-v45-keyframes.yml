@@ -35,18 +35,18 @@ jobs:
       - name: Verify V4.5 compositions
         run: npx remotion compositions src/v45/index.tsx
 
-      - name: Render six keyframe stills (settled frame 96)
+      - name: Render six keyframe stills (deep-still frame 120)
         run: |
           mkdir -p out/v45
-          npx remotion still src/v45/index.tsx V45Attention   out/v45/01_attention.png   --frame=96 --image-format=png
-          npx remotion still src/v45/index.tsx V45Filter      out/v45/02_filter.png      --frame=96 --image-format=png
-          npx remotion still src/v45/index.tsx V45Searchlight out/v45/03_searchlight.png --frame=96 --image-format=png
-          npx remotion still src/v45/index.tsx V45Linking     out/v45/04_linking.png     --frame=96 --image-format=png
-          npx remotion still src/v45/index.tsx V45Choice      out/v45/05_choice.png      --frame=96 --image-format=png
-          npx remotion still src/v45/index.tsx V45Growth      out/v45/06_growth.png      --frame=96 --image-format=png
+          npx remotion still src/v45/index.tsx V45Attention   out/v45/01_attention.png   --frame=120 --image-format=png
+          npx remotion still src/v45/index.tsx V45Filter      out/v45/02_filter.png      --frame=120 --image-format=png
+          npx remotion still src/v45/index.tsx V45Searchlight out/v45/03_searchlight.png --frame=120 --image-format=png
+          npx remotion still src/v45/index.tsx V45Linking     out/v45/04_linking.png     --frame=120 --image-format=png
+          npx remotion still src/v45/index.tsx V45Choice      out/v45/05_choice.png      --frame=120 --image-format=png
+          npx remotion still src/v45/index.tsx V45Growth      out/v45/06_growth.png      --frame=120 --image-format=png
 
       - name: Render 3x2 contact sheet
-        run: npx remotion still src/v45/index.tsx V45ContactSheet out/v45/v45_contact_sheet.png --frame=96 --image-format=png
+        run: npx remotion still src/v45/index.tsx V45ContactSheet out/v45/v45_contact_sheet.png --frame=120 --image-format=png
 
       - name: Structural gate (V4.5 P0)
         run: |

@@ -5,7 +5,7 @@
   "scripts": {
     "render": "remotion render src/index.tsx Attention out/attention-is-all-you-need.mp4 --codec=h264 --crf=17 --concurrency=2",
     "still": "remotion still src/index.tsx Attention out/still.png --frame=1800",
-    "v45:stills": "remotion still src/v45/index.tsx V45Attention out/v45/01_attention.png --frame=96 --image-format=png && remotion still src/v45/index.tsx V45Filter out/v45/02_filter.png --frame=96 --image-format=png"
+    "v45:stills": "remotion still src/v45/index.tsx V45Attention out/v45/01_attention.png --frame=120 --image-format=png && remotion still src/v45/index.tsx V45Filter out/v45/02_filter.png --frame=120 --image-format=png"
   },
   "dependencies": {
     "@remotion/cli": "4.0.519",

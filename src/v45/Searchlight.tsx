@@ -122,9 +122,10 @@ export const V45Searchlight: React.FC = () => {
   ];
   const focusOf = (at: number, dur: number) => outCubic(f, 0, 1, at, dur);
   const END_FOCUS: Record<string, number> = { chart: 0.44, list: 0.4, media: 0.36, note: 0.34, brief: 1 };
-  const titleQ = outCubic(f, 0, 1, 10, 40);
+  const titleQ = outCubic(f, 0, 1, 82, 24);        // 命名节拍：面板锁定后巨字压入
   const acquire = outCubic(f, 0, 1, 76, 10);
-  const lateIn = outCubic(f, 0, 1, 70, 16);
+  const kickerIn = outCubic(f, 0, 1, 78, 14);
+  const lateIn = outCubic(f, 0, 1, 100, 18);
   return (
     <CinemaFrame variant="cold" glow={[38, 54]} glowColor="rgba(12,26,34,.55)">
       {/* 06 大尺度地面网格（空旷） */}
@@ -210,7 +211,7 @@ export const V45Searchlight: React.FC = () => {
       }}>BEAM 04° · 12,400 lm</div>
 
       {/* 10 辅助排版 */}
-      <KickerLine text="SEARCHLIGHT / WORKSPACE" />
+      <KickerLine text="SEARCHLIGHT / WORKSPACE" opacity={kickerIn} />
       <SubText x={86} y={H - 150} width={600} opacity={lateIn}
         lines={<>注意把一处照亮，展开成<span style={{ color: C.gold, fontWeight: 700 }}>此刻的工作区</span>；<br />
         其余世界，暂时退入黑暗。</>} />

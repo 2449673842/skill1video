@@ -111,8 +111,9 @@ export const V45Linking: React.FC = () => {
   const qs = NODES.map((n, i) => outCubic(f, 0, 1, 12 + i * 4.2 + hash(i, 51) * 6, 26));
   const trackQ = outCubic(f, 0, 1, 58, 26);            // Main Event②：轨道压成
   const acquire = outCubic(f, 0, 1, 74, 12);           // TRACK LOCK 捕获
-  const titleQ = outCubic(f, 0, 1, 8, 30);
-  const lateIn = outCubic(f, 0, 1, 70, 16);
+  const titleQ = outCubic(f, 0, 1, 80, 26);        // ghost 巨字：轨道压成后缓缓沉入
+  const kickerIn = outCubic(f, 0, 1, 78, 14);
+  const lateIn = outCubic(f, 0, 1, 100, 18);
   return (
     <CinemaFrame variant="cold" glow={[58, 48]} glowColor="rgba(10,24,34,.6)">
       {/* 03 密星尘（深空） */}
@@ -157,7 +158,7 @@ export const V45Linking: React.FC = () => {
       </div>
 
       {/* 10 辅助排版 */}
-      <KickerLine text="LINKING / NETWORK TO TRACK" />
+      <KickerLine text="LINKING / NETWORK TO TRACK" opacity={kickerIn} />
       <SubText x={86} y={H - 150} width={620} opacity={lateIn}
         lines={<>被注意的对象开始<span style={{ color: C.gold, fontWeight: 700 }}>连接</span>，织成网络；<br />
         网络里被反复走的那条，压成一条<span style={{ color: C.cyan, fontWeight: 700 }}>轨道</span>。</>} />

@@ -87,11 +87,12 @@ export const V45Choice: React.FC = () => {
   const dnQ = outCubic(f, 0, 1, 38, 42);              // 下行暗路生长
   const dnDie = outCubic(f, 0, 1, 52, 30);            // 暗路失活（降不透明度）
   const emberQ = outCubic(f, 0, 1, 44, 26);           // 常驻余烬浮现
-  const titleQ = outCubic(f, 0, 1, 30, 44);           // 巨字升起
-  const aLbl = outCubic(f, 0, 1, 66, 14);
-  const bLbl = outCubic(f, 0, 1, 74, 14);
+  const titleQ = outCubic(f, 0, 1, 80, 24);           // 命名节拍：一条亮一条熄之后
+  const aLbl = outCubic(f, 0, 1, 96, 14);
+  const bLbl = outCubic(f, 0, 1, 102, 14);
   const acquire = outCubic(f, 0, 1, 72, 12);
-  const lateIn = outCubic(f, 0, 1, 70, 16);
+  const kickerIn = outCubic(f, 0, 1, 78, 14);
+  const lateIn = outCubic(f, 0, 1, 98, 18);
   const hitPulse = pulseAt(f, 24, 8);
   /* 轨道沿路节点（随金路生长浮现） */
   const nodeIn = (i: number) => clamp((upQ - [0.18, 0.55, 0.9][i]) / 0.22);
@@ -176,7 +177,7 @@ export const V45Choice: React.FC = () => {
       ))}
 
       {/* 10 辅助排版 */}
-      <KickerLine text="CHOICE / FORK" />
+      <KickerLine text="CHOICE / FORK" opacity={kickerIn} />
       <SubText x={86} y={H - 150} width={560} opacity={lateIn}
         lines={<>轨道尽头是一个分叉。<br />
         走上<span style={{ color: C.ember, fontWeight: 700 }}>一条</span>的同时，另一条正在熄灭。</>} />
