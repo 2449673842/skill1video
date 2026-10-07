@@ -1,12 +1,14 @@
 import React from "react";
-import {AbsoluteFill, Img, getInputProps, useCurrentFrame, staticFile, delayRender, continueRender} from "remotion";
+import {AbsoluteFill, Easing, Img, getInputProps, useCurrentFrame, staticFile, delayRender, continueRender, interpolate} from "remotion";
 
 /* ============================================================
    V4.5 CINEMATIC SYSTEM
    美术母版 = V3 impact-depth 电影语言（深蓝黑 / 暖金主光 / 青蓝辅光）
-   本文件只负责静态画面质量 + 为 Phase 2 动态预留确定性钩子。
-   静帧规则：settle 之后（默认 frame>=60）完全静止，无 drift / 无呼吸。
+   动态预算：所有事件在 MOTION_END(=86) 前收敛，之后为真静止保持段。
+   每个动作走 5 阶段：Preparation → Trigger → Main Event → Settle → New State。
    ============================================================ */
+
+export const MOTION_END = 86;             // 此帧后所有运动必须停止
 
 /* 巨字显示字体：仓库自带 Archivo Black（本地与 CI 完全一致，不依赖系统字体） */
 if (typeof document !== "undefined") {
@@ -41,6 +43,7 @@ export const CJK =
 /* ---- 数学（全部确定性） ---- */
 export const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v));
 export const mix = (a: number, b: number, t: number) => a + (b - a) * t;
+export const lerp = mix;
 export const smooth = (t: number) => { const x = clamp(t); return x * x * (3 - 2 * x); };
 export const smoother = (t: number) => { const x = clamp(t); return x * x * x * (x * (x * 6 - 15) + 10); };
 export const fract = (v: number) => v - Math.floor(v);
@@ -48,6 +51,39 @@ export const hash = (i: number, s = 0) => fract(Math.sin((i + 1) * 12.9898 + s *
 export const phase = (f: number, a: number, b: number) => smoother((f - a) / (b - a));
 /* 入场 settle：settle() 在 SETTLE_AT 后恒等于 1 —— 之后无任何时间项 */
 export const settle = (f: number, from = 0, d = 48) => smoother(clamp((f - from) / Math.min(d, SETTLE_AT - from)));
+
+/* ---- 动态工具（全部确定性，曲线在终点后恒定） ---- */
+const CLAMP = { extrapolateLeft: "clamp" as const, extrapolateRight: "clamp" as const };
+export const outCubic = (f: number, a: number, b: number, from: number, d: number) =>
+  interpolate(f, [from, from + d], [a, b], { ...CLAMP, easing: Easing.out(Easing.cubic) });
+export const inOutCubic = (f: number, a: number, b: number, from: number, d: number) =>
+  interpolate(f, [from, from + d], [a, b], { ...CLAMP, easing: Easing.inOut(Easing.cubic) });
+/* 事件包络：t 时刻触发，指数衰减，仅用于瞬时反馈（bloom/微光），不产生持续运动 */
+export const pulseAt = (f: number, at: number, decay = 7) =>
+  f < at ? 0 : Math.exp(-(f - at) / decay);
+
+/* 冲击涟漪：事件驱动的扩散环，衰减后消失（不留持续动画） */
+export const Ripple: React.FC<{
+  f: number; events: number[]; x: number; y: number;
+  color?: string; maxR?: number; layers?: number; life?: number; zIndex?: number;
+}> = ({ f, events, x, y, color = C.gold, maxR = 300, layers = 3, life = 30, zIndex = 66 }) => (
+  <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex }}>
+    {events.flatMap((at, ei) => Array.from({ length: layers }).map((_, i) => {
+      const local = (f - at - i * 4) / life;
+      if (local < 0 || local > 1) return null;
+      const r = 26 + smoother(clamp(local)) * (maxR + i * 40);
+      const a = (1 - clamp(local)) * (0.44 - i * 0.07);
+      return (
+        <div key={ei + "-" + i} style={{
+          position: "absolute", left: x, top: y, width: r * 2, height: r * 2,
+          transform: "translate(-50%,-50%)", borderRadius: "50%",
+          border: (i === 0 ? 3 : 2) + "px solid " + color, opacity: a,
+          boxShadow: "0 0 " + (10 + 18 * (1 - local)) + "px " + color + "44",
+        }} />
+      );
+    }))}
+  </div>
+);
 
 /* ============================================================
    01 BACKGROUND ATMOSPHERE —— 三种大气氛
@@ -203,7 +239,9 @@ export const SignalShard: React.FC<{
   zIndex?: number;
   orbit?: boolean;     // 精细轨道结构
   orbitNode?: number;  // 轨道节点角度 deg（静态）
-}> = ({ x, y, scale = 1, tilt = -14, coreBoost = 1, zIndex = 50, orbit = true, orbitNode = 38 }) => {
+  orbitSpin?: number;  // 轨道整体旋转偏移（deg，用于减速停住的入场）
+  orbitAlpha?: number; // 轨道透明度
+}> = ({ x, y, scale = 1, tilt = -14, coreBoost = 1, zIndex = 50, orbit = true, orbitNode = 38, orbitSpin = 0, orbitAlpha = 1 }) => {
   const sh = 380 * scale, sw = 236 * scale;
   const clip = "polygon(26% 0%, 100% 24%, 74% 100%, 0% 76%)";
   return (
@@ -260,7 +298,7 @@ export const SignalShard: React.FC<{
       ))}
       {/* 精细轨道结构 */}
       {orbit && (
-        <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", opacity: orbitAlpha }}>
           {[0, 1].map((i) => {
             const ew = sw * (1.62 + i * 0.34), eh = sh * (0.44 + i * 0.16);
             return (
@@ -268,14 +306,14 @@ export const SignalShard: React.FC<{
                 position: "absolute", left: "50%", top: "50%", width: ew, height: eh,
                 marginLeft: -ew / 2, marginTop: -eh / 2, borderRadius: "50%",
                 border: `${(i ? 1 : 1.6) * scale}px ${i ? "solid" : "dashed"} rgba(91,196,212,${i ? 0.30 : 0.46})`,
-                transform: `rotate(${i ? -9 : 13}deg)`,
+                transform: `rotate(${(i ? -9 : 13) + orbitSpin}deg)`,
                 boxShadow: `0 0 ${10 * scale}px rgba(91,196,212,.14)`,
               }} />
             );
           })}
           {/* 轨道节点（静态） */}
           {[orbitNode, orbitNode + 205].map((a, i) => {
-            const ew = sw * 1.62, eh = sh * 0.44, rot = 13;
+            const ew = sw * 1.62, eh = sh * 0.44, rot = 13 + orbitSpin;
             const rad = (a * Math.PI) / 180;
             const ox = (Math.cos(rad) * ew) / 2, oy = (Math.sin(rad) * eh) / 2;
             const rx = ox * Math.cos((rot * Math.PI) / 180) - oy * Math.sin((rot * Math.PI) / 180);
@@ -301,11 +339,11 @@ export const SignalShard: React.FC<{
    ============================================================ */
 export const LightPath: React.FC<{
   d: string; color?: string; width?: number; opacity?: number; dash?: [number, number];
-  glow?: boolean; zIndex?: number;
-}> = ({ d, color = C.gold, width = 2.4, opacity = 0.5, dash = [18, 14], glow = true, zIndex = 60 }) => (
+  glow?: boolean; zIndex?: number; offset?: number;
+}> = ({ d, color = C.gold, width = 2.4, opacity = 0.5, dash = [18, 14], glow = true, zIndex = 60, offset = 0 }) => (
   <svg width={W} height={H} style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex, overflow: "visible" }}>
     <path d={d} fill="none" stroke={color} strokeWidth={width} strokeOpacity={opacity}
-      strokeDasharray={`${dash[0]} ${dash[1]}`}
+      strokeDasharray={`${dash[0]} ${dash[1]}`} strokeDashoffset={offset}
       style={glow ? { filter: `drop-shadow(0 0 7px ${color})` } : undefined} />
   </svg>
 );

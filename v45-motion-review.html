@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attention V4.5 · Motion Review</title>
+<style>
+  :root{
+    --bg:#05070a; --bg2:#080b0f; --panel:#0b0f14; --line:#1a232c;
+    --gold:#f0d79a; --gold-d:#d9b26f; --cyan:#5bc4d4; --ice:#9fd8e8;
+    --cream:#efe5cc; --dim:rgba(239,229,204,.55); --dim2:rgba(239,229,204,.34);
+    --red:#d85849; --ok:#66b9aa; --ember:#f28a52;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--cream);font-family:'Segoe UI','Noto Sans SC','Microsoft YaHei',sans-serif}
+  header{display:flex;align-items:center;gap:18px;padding:20px 28px 14px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#070a0e,#05070a);position:sticky;top:0;z-index:50}
+  header h1{font-size:19px;font-weight:800}
+  header h1 b{color:var(--gold)}
+  header .sub{font-size:12px;color:var(--dim2);letter-spacing:2px}
+  header .spacer{flex:1}
+  .btn{background:#10161d;border:1px solid var(--line);color:var(--cream);padding:7px 14px;border-radius:6px;
+    font-size:12.5px;cursor:pointer;letter-spacing:.6px;transition:.15s}
+  .btn:hover{border-color:var(--gold-d);color:var(--gold)}
+  .btn.primary{background:linear-gradient(135deg,#3a2f16,#241c0d);border-color:#6e5524;color:var(--gold)}
+  nav{display:flex;gap:8px;padding:14px 28px;flex-wrap:wrap;border-bottom:1px solid var(--line);background:var(--bg2)}
+  .tab{display:flex;flex-direction:column;gap:3px;padding:10px 16px;border:1px solid var(--line);border-radius:8px;
+    cursor:pointer;background:var(--panel);min-width:150px;transition:.15s}
+  .tab:hover{border-color:#31414f}
+  .tab.active{border-color:var(--gold-d);background:linear-gradient(160deg,#191307,#0d0a05);box-shadow:0 0 24px rgba(217,178,111,.09)}
+  .tab .no{font-size:10.5px;letter-spacing:3px;color:var(--cyan);opacity:.75}
+  .tab .nm{font-size:14.5px;font-weight:700}
+  .tab .nm small{display:block;font-size:10.5px;color:var(--dim2);font-weight:400;margin-top:2px;letter-spacing:1px}
+  main{padding:22px 28px;max-width:1760px;margin:0 auto}
+  .playerWrap{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+  video{width:100%;border-radius:8px;display:block;background:#010203;border:1px solid var(--line)}
+  /* 时间轴 + 相位带 */
+  .tl{position:relative;margin-top:14px;height:46px;user-select:none}
+  .tl .track{position:absolute;left:0;right:0;top:18px;height:10px;border-radius:5px;overflow:hidden;
+    background:linear-gradient(90deg,#131a22 0 9.3%,#0e2230 9.3% 20%,#2a2113 20% 52%,#1d2635 52% 57.3%,#0c141b 57.3% 100%);
+    border:1px solid var(--line);cursor:pointer}
+  .tl .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,rgba(240,215,154,.35),rgba(240,215,154,.65));pointer-events:none}
+  .tl .ph{position:absolute;top:0;font-size:9.5px;letter-spacing:1.5px;color:var(--dim2);transform:translateX(-50%);white-space:nowrap}
+  .tl .cursor{position:absolute;top:12px;width:2px;height:22px;background:var(--gold);box-shadow:0 0 10px rgba(240,215,154,.9);pointer-events:none}
+  .tl .note-mark{position:absolute;top:32px;width:8px;height:8px;border-radius:50%;background:var(--ember);
+    transform:translateX(-50%);box-shadow:0 0 8px rgba(242,138,82,.8);cursor:pointer}
+  .ctrls{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .ctrls .time{font-variant-numeric:tabular-nums;font-size:13px;color:var(--ice);letter-spacing:1px;min-width:118px}
+  .ctrls .grp{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+  .ctrls .grp button{background:var(--panel);border:none;color:var(--dim);padding:7px 13px;font-size:12.5px;cursor:pointer}
+  .ctrls .grp button:hover{color:var(--gold)}
+  .ctrls .grp button.on{background:#1c2430;color:var(--ice)}
+  .filmstrip{margin-top:16px}
+  .filmstrip img{width:100%;border-radius:8px;border:1px solid var(--line);display:block}
+  .filmstrip .cap{font-size:11px;color:var(--dim2);letter-spacing:2px;margin-top:6px}
+  /* notes */
+  section.notes{margin-top:24px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px 24px}
+  section.notes h2{font-size:15px;letter-spacing:1px;color:var(--gold);margin-bottom:4px}
+  section.notes .hint{font-size:12px;color:var(--dim2);margin-bottom:14px}
+  .noteRow{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px}
+  .noteRow .t{font-variant-numeric:tabular-nums;font-size:12.5px;color:var(--ember);min-width:64px;padding-top:7px;letter-spacing:1px}
+  .noteRow input{flex:1;background:#070b0e;border:1px solid var(--line);border-radius:6px;color:var(--cream);
+    padding:8px 12px;font-size:13px;font-family:inherit}
+  .noteRow input:focus{outline:none;border-color:var(--gold-d)}
+  .noteRow .del{background:none;border:none;color:var(--dim2);cursor:pointer;font-size:15px;padding:6px 8px}
+  .noteRow .del:hover{color:var(--red)}
+  footer{padding:26px 28px;color:var(--dim2);font-size:12px;letter-spacing:.8px;line-height:2;border-top:1px solid var(--line);margin-top:30px}
+  kbd{background:#10161d;border:1px solid var(--line);border-radius:4px;padding:1px 7px;font-size:11px;color:var(--ice)}
+</style>
+</head>
+<body>
+<header>
+  <h1><b>ATTENTION</b> · V4.5 Motion Review</h1>
+  <span class="sub">PHASE 5 · 5s SCENE MOTION SAMPLES</span>
+  <span class="spacer"></span>
+  <button class="btn primary" id="exportMd">导出 Markdown 反馈</button>
+</header>
+
+<nav id="tabs"></nav>
+
+<main>
+  <div class="playerWrap">
+    <video id="player" preload="auto" controlslist="nodownload" playsinline></video>
+    <div class="tl" id="tl">
+      <div class="track" id="track"><div class="fill" id="fill"></div></div>
+      <div class="cursor" id="cursor"></div>
+    </div>
+    <div class="ctrls">
+      <span class="time" id="time">0.00 / 5.00</span>
+      <div class="grp">
+        <button id="playBtn">▶ 播放</button>
+        <button id="restartBtn">⟲ 重播</button>
+      </div>
+      <div class="grp">
+        <button id="stepB">◀ 逐帧</button>
+        <button id="stepF">逐帧 ▶</button>
+      </div>
+      <div class="grp" id="speedGrp">
+        <button data-s="0.5">0.5×</button>
+        <button data-s="1" class="on">1×</button>
+        <button data-s="1.5">1.5×</button>
+      </div>
+      <div class="grp">
+        <button id="jumpPrep">准备段</button>
+        <button id="jumpMain">主事件</button>
+        <button id="jumpHold">静止段</button>
+      </div>
+      <button class="btn" id="addNote">＋ 在当前时间加批注</button>
+      <span style="font-size:12px;color:var(--dim2)"><kbd>Space</kbd> 播放 · <kbd>←</kbd><kbd>→</kbd> 逐帧 · <kbd>1</kbd>–<kbd>6</kbd> 切场景</span>
+    </div>
+    <div class="filmstrip">
+      <img id="strip" src="" alt="filmstrip">
+      <div class="cap">四格胶片条：0.4s 准备 · 1.7s 主事件 · 2.9s SETTLE · 4.5s 静止保持</div>
+    </div>
+  </div>
+
+  <section class="notes">
+    <h2 id="notesTitle">Timestamp Notes</h2>
+    <div class="hint">规则提醒：frame 86 后必须真正静止；settle 必须存在；一个时间点只做一件主要的事。批注会随 Markdown 导出。</div>
+    <div id="noteList"></div>
+  </section>
+</main>
+
+<footer>
+  V4.5 · v4-5-cinematic-rebuild · Phase 5 动态审片。<br>
+  视频源 <code>out/v45/motion/*.mp4</code>（1920×1080 · 30fps · h264）· 源码 <code>src/v45/*.tsx</code>。<br>
+  通过标准：动作没有破坏海报，而是在帮助观众理解它。
+</footer>
+
+<script>
+const SCENES=[
+  {n:"01",file:"01_attention",en:"ATTENTION",zh:"信号洪流涌入 · 主体点火 · HUD 捕获"},
+  {n:"02",file:"02_filter",en:"FILTER",zh:"光门升起 · 碎片穿三门 · 停稳"},
+  {n:"03",file:"03_searchlight",en:"SEARCHLIGHT",zh:"灯锥张开 · 面板逐一点亮 · 锁定"},
+  {n:"04",file:"04_linking",en:"LINKING",zh:"节点发射成网 · 金轨压成 · LOCK"},
+  {n:"05",file:"05_choice",en:"CHOICE",zh:"轨道入画 · 余烬迸发 · 一条亮一条熄"},
+  {n:"06",file:"06_growth",en:"GROWTH",zh:"主干拔高 · 时间刻度落下 · apex 点亮"},
+];
+/* 相位带（帧） */
+const PHASES=[["PREP",0],["TRIGGER",14],["MAIN",30],["SETTLE",78],["HOLD",86]];
+const DUR=5.0, FPS=30;
+let cur=0, notes=SCENES.map(()=>[]);
+const player=document.getElementById("player");
+
+const tabs=document.getElementById("tabs");
+SCENES.forEach((s,i)=>{
+  const d=document.createElement("div");d.className="tab";d.dataset.i=i;
+  d.innerHTML=`<span class="no">MOTION ${s.n}</span><span class="nm">${s.en}<small>${s.zh}</small></span>`;
+  d.onclick=()=>select(i);tabs.appendChild(d);
+});
+/* 相位标签 */
+const tl=document.getElementById("tl");
+PHASES.forEach(([name,f])=>{
+  const el=document.createElement("div");el.className="ph";
+  el.style.left=(f/150*100)+"%";el.textContent=name;tl.appendChild(el);
+});
+
+function select(i){
+  cur=i;
+  document.querySelectorAll(".tab").forEach((t,j)=>t.classList.toggle("active",j===i));
+  player.src=`out/v45/motion/${SCENES[i].file}.mp4`;
+  document.getElementById("strip").src=`out/v45/motion_strips/${SCENES[i].file}_strip.png`;
+  document.getElementById("notesTitle").textContent=`Timestamp Notes · ${SCENES[i].n} ${SCENES[i].en}`;
+  renderNotes();drawNotes();
+}
+function fmt(t){return t.toFixed(2);}
+function refresh(){
+  const t=player.currentTime||0;
+  document.getElementById("time").textContent=`${fmt(t)} / ${DUR.toFixed(2)}`;
+  const pct=t/DUR*100;
+  document.getElementById("fill").style.width=pct+"%";
+  document.getElementById("cursor").style.left=pct+"%";
+  drawNotes();
+}
+player.addEventListener("timeupdate",refresh);
+player.addEventListener("seeked",refresh);
+player.addEventListener("play",()=>document.getElementById("playBtn").textContent="❚❚ 暂停");
+player.addEventListener("pause",()=>document.getElementById("playBtn").textContent="▶ 播放");
+
+document.getElementById("playBtn").onclick=()=>player.paused?player.play():player.pause();
+document.getElementById("restartBtn").onclick=()=>{player.currentTime=0;player.play();};
+const step=(d)=>{player.pause();player.currentTime=Math.max(0,Math.min(DUR-1/FPS,player.currentTime+d/FPS));};
+document.getElementById("stepB").onclick=()=>step(-1);
+document.getElementById("stepF").onclick=()=>step(1);
+document.querySelectorAll("#speedGrp button").forEach(b=>b.onclick=()=>{
+  player.playbackRate=parseFloat(b.dataset.s);
+  document.querySelectorAll("#speedGrp button").forEach(x=>x.classList.toggle("on",x===b));});
+document.getElementById("jumpPrep").onclick=()=>{player.currentTime=0.2;};
+document.getElementById("jumpMain").onclick=()=>{player.currentTime=1.7;};
+document.getElementById("jumpHold").onclick=()=>{player.currentTime=3.4;};
+/* 时间轴点击/拖动 */
+const track=document.getElementById("track");
+const seek=(e)=>{const r=track.getBoundingClientRect();
+  const x=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
+  player.currentTime=Math.max(0,Math.min(DUR,x/r.width*DUR));};
+let dragging=false;
+track.addEventListener("mousedown",e=>{dragging=true;seek(e);});
+window.addEventListener("mousemove",e=>{if(dragging)seek(e);});
+window.addEventListener("mouseup",()=>dragging=false);
+
+/* notes */
+document.getElementById("addNote").onclick=()=>{
+  notes[cur].push({t:player.currentTime||0,text:""});
+  renderNotes();drawNotes();
+  const inputs=document.querySelectorAll("#noteList input");
+  inputs[inputs.length-1]?.focus();
+};
+function renderNotes(){
+  const list=document.getElementById("noteList");list.innerHTML="";
+  if(!notes[cur].length){list.innerHTML='<div style="color:var(--dim2);font-size:13px">暂无批注。播放到关键时间点，点「＋ 在当前时间加批注」。</div>';return;}
+  notes[cur].forEach((nt,idx)=>{
+    const row=document.createElement("div");row.className="noteRow";
+    row.innerHTML=`<span class="t">${nt.t.toFixed(2)}s</span><input value="${nt.text.replace(/"/g,"&quot;")}" placeholder="这里什么问题？要改什么？">
+      <button class="del" title="删除">✕</button>`;
+    row.querySelector("input").oninput=e=>{nt.text=e.target.value;};
+    row.querySelector(".del").onclick=()=>{notes[cur].splice(idx,1);renderNotes();drawNotes();};
+    row.querySelector("input").onfocus=()=>{player.currentTime=nt.t;};
+    list.appendChild(row);
+  });
+}
+function drawNotes(){
+  tl.querySelectorAll(".note-mark").forEach(m=>m.remove());
+  notes[cur].forEach(nt=>{
+    const m=document.createElement("div");m.className="note-mark";
+    m.style.left=(nt.t/DUR*100)+"%";m.title=`${nt.t.toFixed(2)}s ${nt.text}`;
+    m.onclick=()=>{player.currentTime=nt.t;};
+    tl.appendChild(m);
+  });
+}
+/* export */
+document.getElementById("exportMd").onclick=()=>{
+  let md=`# Attention V4.5 · Motion Review 反馈\n\n导出时间：${new Date().toLocaleString()}\n\n`;
+  let any=false;
+  SCENES.forEach((s,i)=>{
+    if(!notes[i].length)return;any=true;
+    md+=`## ${s.n} ${s.en} — ${s.zh}\n`;
+    notes[i].slice().sort((a,b)=>a.t-b.t).forEach(nt=>{
+      md+=`- **${nt.t.toFixed(2)}s**：${nt.text||"（未填写）"}\n`;});
+    md+="\n";
+  });
+  if(!any)md+=`（尚未写下任何批注）\n`;
+  md+=`---\n片源: out/v45/motion/*.mp4 · 分支: v4-5-cinematic-rebuild\n`;
+  const b=new Blob([md],{type:"text/markdown"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="v45-motion-feedback.md";a.click();
+};
+/* keys */
+window.addEventListener("keydown",e=>{
+  if(e.target.tagName==="INPUT")return;
+  if(e.code==="Space"){e.preventDefault();player.paused?player.play():player.pause();}
+  if(e.key==="ArrowLeft")step(-1);
+  if(e.key==="ArrowRight")step(1);
+  if(e.key>="1"&&e.key<="6")select(+e.key-1);
+});
+select(0);
+</script>
+</body>
+</html>
